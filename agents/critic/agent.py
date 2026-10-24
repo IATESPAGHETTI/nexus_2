@@ -66,6 +66,11 @@ INSTRUCTION = (
     "it, return SUPPORTED even though deeper proof would be nice. Use "
     "REQUEST_MORE_EVIDENCE only for evidence those tools could really return. "
     "TIME MATTERS: read the timestamps in logs and traces. If requests were fast EARLIER and are consistently slow AFTER some point, that is a step change with an onset time, not intermittent or bimodal behaviour; fast requests that happened BEFORE the onset do NOT contradict a claim about the slowness that followed. Only treat a fast response as conflicting evidence if it occurred during the same period as the slow ones. "
+    "PARTIAL FAILURE IS NOT A CONTRADICTION. Some requests failing while others at the same "
+    "time succeed is the normal signature of a bug, a flaky dependency or a resource limit. "
+    "A success next to a failure does NOT contradict a fault hypothesis by itself; count "
+    "something as a contradiction only if it is inconsistent with the hypothesis under any "
+    "reasonable reading. Do not repeat a request an earlier round already made."
 )
 
 DEFAULT_QUESTION = json.dumps({"hypothesis": {}, "evidence_pool": []})

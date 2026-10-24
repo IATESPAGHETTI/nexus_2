@@ -23,6 +23,14 @@ ROOT_CAUSE_KEYWORDS = {
 }
 
 
+# A statement that says no cause was found must never be credited as a diagnosis just
+# because it mentions a fault word ("no root cause for a database slowdown is supported").
+NEGATION_MARKERS = (
+    "no root cause", "not supported", "no supported", "cannot determine", "unable to determine",
+    "insufficient evidence", "no evidence of", "not reproducible", "no fault",
+)
+
+
 def classify_statement(statement: str | None) -> str:
     """Best-effort classification of a NEXUS Hypothesis's free-text statement
     into the closed root-cause vocabulary, for scoring only. Returns
@@ -30,6 +38,8 @@ def classify_statement(statement: str | None) -> str:
     if not statement:
         return "unknown"
     lowered = statement.lower()
+    if any(marker in lowered for marker in NEGATION_MARKERS):
+        return "unknown"
     for root_cause, keywords in ROOT_CAUSE_KEYWORDS.items():
         if any(kw in lowered for kw in keywords):
             return root_cause
@@ -97,4 +107,5 @@ def aggregate(records: list[dict]) -> dict:
         "abstention_rate": round(len(abstained) / total, 3),
         "diagnosis_rate": round(len(diagnosed) / total, 3),
         "avg_latency_seconds": round(sum(r.get("latency_seconds", 0.0) for r in records) / total, 3),
+        "errored_runs": sum(1 for r in records if r.get("error")),
     }

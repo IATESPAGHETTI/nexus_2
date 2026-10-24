@@ -1,0 +1,443 @@
+{
+ "timestamps": [
+  "2026-10-13T18:25:37Z",
+  "2026-10-14T15:45:06Z",
+  "2026-10-14T15:53:54Z"
+ ],
+ "model": "deepseek/deepseek-chat",
+ "classification": "official_nexus_benchmark",
+ "n_runs": 3,
+ "triage_vs_full": {
+  "full_tokens": 497538,
+  "triage_tokens": 483409,
+  "triage_cheaper_in": 11,
+  "of": 15
+ },
+ "aggregates": {
+  "single_agent_baseline": {
+   "total": 15,
+   "correct": 15,
+   "root_cause_accuracy": 1.0,
+   "false_diagnosis_rate": 0.0,
+   "abstention_rate": 0.0,
+   "avg_latency_seconds": 1.7672666666666665,
+   "avg_llm_calls": 1.0,
+   "avg_total_tokens": 2495,
+   "per_run_accuracy": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "avg_specialists": null,
+   "errored_runs": 0
+  },
+  "full_nexus": {
+   "total": 15,
+   "correct": 14,
+   "root_cause_accuracy": 0.9333333333333333,
+   "false_diagnosis_rate": 0.0,
+   "abstention_rate": 0.0,
+   "avg_latency_seconds": 23.947266666666668,
+   "avg_llm_calls": 10.8,
+   "avg_total_tokens": 33169,
+   "per_run_accuracy": [
+    0.8,
+    1.0,
+    1.0
+   ],
+   "avg_specialists": 4,
+   "errored_runs": 0
+  },
+  "nexus_no_critic": {
+   "total": 15,
+   "correct": 14,
+   "root_cause_accuracy": 0.9333333333333333,
+   "false_diagnosis_rate": 0.0,
+   "abstention_rate": 0.0,
+   "avg_latency_seconds": 21.0812,
+   "avg_llm_calls": 9.9,
+   "avg_total_tokens": 29646,
+   "per_run_accuracy": [
+    1.0,
+    0.8,
+    1.0
+   ],
+   "avg_specialists": 4,
+   "errored_runs": 0
+  },
+  "nexus_triage": {
+   "total": 15,
+   "correct": 14,
+   "root_cause_accuracy": 0.9333333333333333,
+   "false_diagnosis_rate": 0.0,
+   "abstention_rate": 0.0,
+   "avg_latency_seconds": 24.371133333333333,
+   "avg_llm_calls": 9.9,
+   "avg_total_tokens": 32227,
+   "per_run_accuracy": [
+    1.0,
+    0.8,
+    1.0
+   ],
+   "avg_specialists": 3.1,
+   "errored_runs": 0
+  }
+ },
+ "runs": [
+  {
+   "scenario": "FI-bad-deployment",
+   "single_agent_baseline": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     2612,
+     2670,
+     2767
+    ],
+    "specialists": [
+     null,
+     null,
+     null
+    ]
+   },
+   "full_nexus": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     41659,
+     37430,
+     40399
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_no_critic": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     27164,
+     17964,
+     33975
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_triage": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     26758,
+     36339,
+     34372
+    ],
+    "specialists": [
+     3,
+     3,
+     3
+    ]
+   }
+  },
+  {
+   "scenario": "FI-db-slowdown",
+   "single_agent_baseline": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     2402,
+     2396,
+     2387
+    ],
+    "specialists": [
+     null,
+     null,
+     null
+    ]
+   },
+   "full_nexus": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     34445,
+     31651,
+     31490
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_no_critic": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     19162,
+     19628,
+     26492
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_triage": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     30729,
+     20848,
+     20744
+    ],
+    "specialists": [
+     3,
+     3,
+     3
+    ]
+   }
+  },
+  {
+   "scenario": "FI-config-error",
+   "single_agent_baseline": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     2538,
+     2521,
+     2520
+    ],
+    "specialists": [
+     null,
+     null,
+     null
+    ]
+   },
+   "full_nexus": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     29464,
+     29849,
+     29496
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_no_critic": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     45775,
+     43528,
+     44495
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_triage": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     51815,
+     26660,
+     28949
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   }
+  },
+  {
+   "scenario": "FI-dependency-failure",
+   "single_agent_baseline": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     2442,
+     2461,
+     2432
+    ],
+    "specialists": [
+     null,
+     null,
+     null
+    ]
+   },
+   "full_nexus": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     26336,
+     39157,
+     38433
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_no_critic": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     23064,
+     23864,
+     34237
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_triage": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     22605,
+     24408,
+     17401
+    ],
+    "specialists": [
+     2,
+     2,
+     2
+    ]
+   }
+  },
+  {
+   "scenario": "FI-resource-exhaustion",
+   "single_agent_baseline": {
+    "outcomes": [
+     "correct",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     2426,
+     2422,
+     2432
+    ],
+    "specialists": [
+     null,
+     null,
+     null
+    ]
+   },
+   "full_nexus": {
+    "outcomes": [
+     "no diagnosis",
+     "correct",
+     "correct"
+    ],
+    "tokens": [
+     33998,
+     30762,
+     22969
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_no_critic": {
+    "outcomes": [
+     "correct",
+     "no diagnosis",
+     "correct"
+    ],
+    "tokens": [
+     31445,
+     26530,
+     27366
+    ],
+    "specialists": [
+     4,
+     4,
+     4
+    ]
+   },
+   "nexus_triage": {
+    "outcomes": [
+     "correct",
+     "no diagnosis",
+     "correct"
+    ],
+    "tokens": [
+     59727,
+     55307,
+     26747
+    ],
+    "specialists": [
+     4,
+     4,
+     2
+    ]
+   }
+  }
+ ]
+}

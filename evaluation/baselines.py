@@ -118,4 +118,9 @@ def single_agent_baseline(incident_description: str) -> dict:
     )
     latency = time.perf_counter() - start
     text = response.choices[0].message.content or ""
-    return build_result(_extract_json(text), latency)
+    result = build_result(_extract_json(text), latency)
+    usage = getattr(response, "usage", None)
+    total = getattr(usage, "total_tokens", None) if usage else None
+    result["llm_calls"] = 1
+    result["total_tokens"] = int(total) if total else None  # None = provider reported nothing
+    return result

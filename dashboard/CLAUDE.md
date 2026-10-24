@@ -144,3 +144,12 @@ status) instead of the real names `orchestrator/recovery.py` actually emits
   callbacks from `lib/conversation.ts`), `PlainEnglishBox` (+ `lib/glossary.ts`; words listed only if they appear in the
   incident text), `lib/scenarios.ts` (five failures + blind symptoms), `story/FailuresSection` and `story/FixesSection`.
 - Inject flow: `resetShop()` first, then traffic, then inject. Event type `AGENTS_SELECTED` added to `api/types.ts`.
+
+## Recorded runs (2026-10-14) — the one allowed replay
+`src/data/recordings/*.json` hold REAL investigations copied unchanged from `backend/.data/nexus.db` after a real benchmark run
+(`api/recordings.ts`; header says model, fault, source report). `api/client.ts` serves a recording instead of calling the backend
+when the id matches one, and `InvestigationPage` shows the red "Recorded run, not live" banner with Play / Pause / Restart / Show
+all. Playback (`lib/replay.ts`) reveals the real events in order; hypotheses, critic verdicts, decision and token totals appear only
+when their real events are reached. Rules: never edit a recording's contents, never show one without the banner, never keep one in
+the viewer's recent-incidents list. To add one: run a real investigation, then export it from the SQLite store.
+

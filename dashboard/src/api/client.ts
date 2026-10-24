@@ -1,7 +1,10 @@
 import type { EventsResponse, IncidentState, NexusEvent } from "./types";
 
 // Pure client for backend/'s real HTTP API (docs/API_CONTRACT.md). No business
-// logic lives here — this dashboard never fabricates or replays activity.
+// logic lives here — this dashboard never fabricates activity. The ONE exception to "never
+// replays" is api/recordings.ts: real, saved investigations that are always shown with a
+// "Recorded run, not live" banner.
+import { getRecording } from "./recordings";
 const BASE = "/api";
 
 async function getJson<T>(path: string): Promise<T> {
@@ -36,10 +39,14 @@ export class NotFoundError extends Error {
 }
 
 export function getIncident(incidentId: string): Promise<IncidentState> {
+  const recorded = getRecording(incidentId);
+  if (recorded) return Promise.resolve(recorded.incident);
   return getJson<IncidentState>(`/incidents/${encodeURIComponent(incidentId)}`);
 }
 
 export function getIncidentEvents(incidentId: string): Promise<NexusEvent[]> {
+  const recorded = getRecording(incidentId);
+  if (recorded) return Promise.resolve(recorded.events);
   return getJson<EventsResponse>(
     `/incidents/${encodeURIComponent(incidentId)}/events`,
   ).then((r) => r.events);

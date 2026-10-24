@@ -155,3 +155,15 @@ def test_aggregate_averages_token_cost_only_over_runs_that_have_it():
     assert summary["avg_llm_calls"] == 15.0
     assert summary["avg_total_tokens"] == 30000
     assert "avg_total_tokens" not in scoring.aggregate([dict(base, token_cost="Unavailable from provider")])
+
+
+@pytest.mark.parametrize("text", [
+    "No root cause for a database slowdown is supported: all evidence shows a healthy system",
+    "Insufficient evidence to pin the failure on the deployment",
+])
+def test_negated_statements_are_not_credited_as_a_diagnosis(text):
+    assert scoring.classify_statement(text) == "unknown"
+
+
+def test_affirmative_statement_still_classified():
+    assert scoring.classify_statement("A bad deployment introduced the order total bug") == "bad_deployment"

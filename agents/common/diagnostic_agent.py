@@ -86,6 +86,23 @@ class DiagnosticAgent:
             tools=[toolset],
         )
 
+    @staticmethod
+    async def _release(agent, runner) -> None:
+        """Each task spawns its own MCP server process (stdio). Closing the toolset kills
+        it; without this the process outlived the task (~1 leaked process per agent per
+        round). Cleanup must never mask the real result or error."""
+        for tool in agent.tools:
+            close = getattr(tool, "close", None)
+            if close is not None:
+                try:
+                    await close()
+                except Exception:
+                    pass
+        try:
+            await runner.close()
+        except Exception:
+            pass
+
     async def investigate(self, question: str) -> dict:
         agent = self.build_adk_agent()
         runner = InMemoryRunner(agent=agent, app_name=f"nexus_{self.agent_name}")
@@ -141,15 +158,7 @@ class DiagnosticAgent:
                     if text:
                         final_text += text
         finally:
-            # Each task spawns its own MCP server process (stdio). Without this the
-            # process outlived the task: ~1 leaked process per agent per round.
-            for tool in agent.tools:
-                close = getattr(tool, "close", None)
-                if close is not None:
-                    try:
-                        await close()
-                    except Exception:  # never let cleanup mask the real result/error
-                        pass
+            await self._release(agent, runner)
 
         finding = build_finding(
             agent_name=self.agent_name,

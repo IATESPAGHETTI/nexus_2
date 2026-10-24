@@ -195,9 +195,10 @@ async def test_loop_is_bounded_and_abstains_when_exhausted(fake_backend, monkeyp
         if agent_name == investigation.EVIDENCE_AGENT_NAME:
             return {"response": {"hypotheses": [dict(HYPOTHESIS_1)]}, "task_id": "t1", "context_id": "c1"}
         call_count["critic"] += 1
+        # A DIFFERENT request each round, so the stall rule cannot fire and only the cap ends it.
         # Always requests more evidence -- never SUPPORTED/CONTRADICTED/ABSTAIN,
         # so the loop can only ever terminate via the max-loop bound.
-        return {"response": {"verdict": "REQUEST_MORE_EVIDENCE", "hypothesis_id": "H1", "requested_evidence": ["more traces"], "rationale": "thin"}, "task_id": "t2", "context_id": "c2"}
+        return {"response": {"verdict": "REQUEST_MORE_EVIDENCE", "hypothesis_id": "H1", "requested_evidence": [f"get_trace round {call_count['critic']}"], "rationale": "thin"}, "task_id": "t2", "context_id": "c2"}
 
     monkeypatch.setattr(investigation, "call_remote_agent", fake_call_remote_agent)
 
@@ -466,3 +467,55 @@ def test_two_new_theories_cannot_both_claim_the_same_old_id():
     new = [_h("H1", "Database queries slow on orders table"), _h("H2", "Database queries became slow on the orders table")]
     investigation.reconcile_hypotheses(previous, new)
     assert len({h["hypothesis_id"] for h in new}) == 2
+
+
+async def _run_with_critic_replies(fake_backend, monkeypatch, replies, max_loops=3):
+    calls = {"critic": 0, "dispatch": 0}
+    base_dispatch = _fake_dispatch({"metrics_agent": FINDING_A, "database_agent": FINDING_B})
+
+    async def counting_dispatch(*a, **k):
+        calls["dispatch"] += 1
+        return await base_dispatch(*a, **k)
+
+    monkeypatch.setattr(investigation, "investigate_incident", counting_dispatch)
+
+    async def fake_call_remote_agent(agent_name, description, message_text):
+        if agent_name == investigation.EVIDENCE_AGENT_NAME:
+            return {"response": {"hypotheses": [dict(HYPOTHESIS_1)]}, "task_id": "t1", "context_id": "c1"}
+        reply = replies[min(calls["critic"], len(replies) - 1)]
+        calls["critic"] += 1
+        return {"response": {"hypothesis_id": "H1", "rationale": "x", **reply}, "task_id": "t2", "context_id": "c2"}
+
+    monkeypatch.setattr(investigation, "call_remote_agent", fake_call_remote_agent)
+    result = await investigation.run_investigation(
+        "incident", agent_names=["metrics_agent", "database_agent"], max_loops=max_loops, trigger_recovery=False
+    )
+    return result, calls
+
+
+@pytest.mark.asyncio
+async def test_loop_stops_when_critic_repeats_the_same_request(fake_backend, monkeypatch):
+    same = {"verdict": "INSUFFICIENT_EVIDENCE", "requested_evidence": ["get_trace: child spans"]}
+    result, calls = await _run_with_critic_replies(fake_backend, monkeypatch, [same], max_loops=5)
+    assert result["status"] == "ABSTAINED"
+    assert calls["critic"] == 2  # round 1 asks, round 2 repeats -> stop; not 5
+    assert "repeated" in result["decision"]["reason"]
+
+
+@pytest.mark.asyncio
+async def test_loop_stops_when_critic_requests_nothing_obtainable(fake_backend, monkeypatch):
+    nothing = {"verdict": "INSUFFICIENT_EVIDENCE", "requested_evidence": [], "unobtainable_evidence": ["stack trace"]}
+    result, calls = await _run_with_critic_replies(fake_backend, monkeypatch, [nothing], max_loops=5)
+    assert result["status"] == "ABSTAINED"
+    assert calls["critic"] == 1 and calls["dispatch"] == 1  # no pointless re-dispatch
+    assert "no further obtainable evidence" in result["decision"]["reason"]
+
+
+@pytest.mark.asyncio
+async def test_new_request_then_supported_still_diagnoses(fake_backend, monkeypatch):
+    replies = [
+        {"verdict": "REQUEST_MORE_EVIDENCE", "requested_evidence": ["get_metrics: error rate"]},
+        {"verdict": "SUPPORTED"},
+    ]
+    result, calls = await _run_with_critic_replies(fake_backend, monkeypatch, replies)
+    assert result["status"] == "DIAGNOSED" and calls["critic"] == 2 and calls["dispatch"] == 2

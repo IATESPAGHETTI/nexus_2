@@ -17,8 +17,14 @@ PRODUCTION_BASE_URL = os.environ.get("PRODUCTION_BASE_URL", "http://127.0.0.1:80
 HTTP_TIMEOUT_SECONDS = 5.0
 
 
-def _get(path: str) -> dict:
-    response = httpx.get(f"{PRODUCTION_BASE_URL}{path}", timeout=HTTP_TIMEOUT_SECONDS)
+def _get(path: str, attempts: int = 4) -> dict:
+    """GET with retry on 5xx. The resource_exhaustion fault makes ANY non-admin request
+    (observability endpoints included) fail ~8% of the time, so a single failed read is
+    noise from the fault, not a reason to abandon the snapshot."""
+    for attempt in range(attempts):
+        response = httpx.get(f"{PRODUCTION_BASE_URL}{path}", timeout=HTTP_TIMEOUT_SECONDS)
+        if response.status_code < 500 or attempt == attempts - 1:
+            break
     response.raise_for_status()
     return response.json()
 

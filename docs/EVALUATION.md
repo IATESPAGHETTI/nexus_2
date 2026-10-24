@@ -69,3 +69,9 @@ Report the generated JSON as the only source for measured evaluation values.
   (old errors, rollbacks) otherwise act as misleading evidence and invalidate the comparison.
 - **Tuning contamination.** The Critic and Logs-agent prompts were adjusted after seeing failures on the five existing
   scenarios. Accuracy must be measured on scenarios not used for that tuning.
+
+First complete live benchmark recorded 2026-10-13 (numbers and the three discarded earlier runs are in
+`docs/PROJECT_STATE.md`). One run per arm per scenario, so results are directional. NEXUS arms are scored on the
+Evidence Agent's structured `fault_class`; every arm gets a full production reset, fault injection and 30 customer
+requests first. Token counts are provider-reported; dollar cost and quota are not computed. Run:
+`.venv-orchestrator/Scripts/python evaluation/run_experiment.py` (paid: about 15 model-heavy runs).

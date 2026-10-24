@@ -241,6 +241,17 @@ async def _call_critic(incident_id: str, hypothesis: dict, evidence_pool: list[d
     return critique
 
 
+def _stalled(critique: dict, previous_requests: set[str]) -> str | None:
+    """A re-dispatch only helps if the critic asks for something new that the tools can
+    fetch. Returns the reason to stop instead, or None to keep going."""
+    requested = {str(r).strip().lower() for r in critique.get("requested_evidence") or [] if str(r).strip()}
+    if not requested:
+        return "critic requested no further obtainable evidence"
+    if requested == previous_requests:
+        return "critic repeated its previous evidence request; re-investigation added nothing"
+    return None
+
+
 async def run_investigation(
     incident_description: str,
     agent_names: list[str] | None = None,
@@ -328,6 +339,7 @@ async def run_investigation(
                 incident_id, "DIAGNOSIS_REACHED", source="incident_manager", payload={"hypothesis": leading, "critique": synthetic_critique}
             )
 
+    previous_requests: set[str] = set()
     for loop_index in range(1, max_loops + 1) if (not skip_critic and decision is None) else ():
         stop = budget.exceeded()
         if stop:
@@ -393,6 +405,13 @@ async def run_investigation(
         if stop:
             decision, reason = "ABSTAINED", f"{stop} -- stopped before requesting more evidence"
             break
+
+        stall_reason = _stalled(critique, previous_requests)
+        if stall_reason:
+            decision = "ABSTAINED"
+            reason = f"{stall_reason} (loop {loop_index} of {max_loops})"
+            break
+        previous_requests = {str(r).strip().lower() for r in critique.get("requested_evidence") or []}
 
         follow_up = (
             f"Re-investigate incident: {incident_description}. The root-cause critic "

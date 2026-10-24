@@ -40,7 +40,7 @@ function StatusStrip() {
 
 export function AppShell({ children }: PropsWithChildren) {
   const { pathname, hash } = useLocation();
-  const marketing = pathname === "/" || pathname === "/presentation";
+  const marketing = pathname === "/" || pathname === "/presentation" || pathname === "/research";
   const isIncidentView = pathname.startsWith("/incidents/");
 
   const item = (active: boolean) => `${styles.navItem} ${active ? styles.navItemActive : ""}`;
@@ -68,6 +68,9 @@ export function AppShell({ children }: PropsWithChildren) {
               </Link>
               <Link to="/presentation" className={item(pathname === "/presentation" && hash !== "#pl-agents")}>
                 Presentation
+              </Link>
+              <Link to="/research" className={item(pathname === "/research")}>
+                Research
               </Link>
             </nav>
 

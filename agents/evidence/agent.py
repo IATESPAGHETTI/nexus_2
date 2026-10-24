@@ -27,6 +27,11 @@ from reasoning_agent import ReasoningAgent  # noqa: E402
 
 AGENT_NAME = "evidence_agent"
 
+# Closed catalog of fault classes the system knows about (same list the single-agent
+# baseline answers from; it is a vocabulary, not a ground truth). "none" = the
+# evidence does not support any of them.
+FAULT_CLASSES = ("bad_deployment", "db_slowdown", "config_error", "dependency_failure", "resource_exhaustion")
+
 INSTRUCTION = (
     "You are the NEXUS Evidence Agent. You will be given a JSON object mapping "
     "diagnostic agent names to their structured Finding objects. Each Finding "
@@ -40,7 +45,11 @@ INSTRUCTION = (
     "(array, same rule), \"confidence\" (a number between 0 and 1), "
     "\"missing_evidence\" (array of strings describing what evidence would "
     "strengthen or refute this hypothesis), and \"requested_next_investigation\" "
-    "(a short string naming what to investigate next, or null). Reply with "
+    "(a short string naming what to investigate next, or null), and "
+    "\"fault_class\" (EXACTLY one of: bad_deployment, db_slowdown, "
+    "config_error, dependency_failure, resource_exhaustion, or none if the "
+    "evidence supports none of them -- the class your statement asserts is the "
+    "cause, never a class your statement rules out). Reply with "
     "ONLY the JSON array -- no prose, no markdown code fences. Propose 1 to 3 "
     "hypotheses, most plausible first. If the findings do not support any "
     "specific root cause, reply with an empty JSON array []. "
@@ -107,6 +116,9 @@ def build_hypotheses(findings_by_agent: dict, raw_model_output) -> list[dict]:
             ]
 
         requested_next = item.get("requested_next_investigation")
+        fault_class = item.get("fault_class")
+        if fault_class not in FAULT_CLASSES:
+            fault_class = "none"  # unrecognised or missing -> asserts no known class
 
         hypotheses.append(
             {
@@ -117,6 +129,7 @@ def build_hypotheses(findings_by_agent: dict, raw_model_output) -> list[dict]:
                 "confidence": confidence,
                 "missing_evidence": missing,
                 "requested_next_investigation": str(requested_next) if requested_next else None,
+                "fault_class": fault_class,
                 "status": "PROPOSED",
                 "revision": 1,
                 "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

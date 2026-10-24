@@ -54,7 +54,20 @@ def test_bad_deployment_injection_appends_a_change_history_entry():
     after = client.get("/changes").json()["changes"]
     assert len(after) == len(before) + 1
     assert after[0]["type"] == "deployment"
-    assert "fault_injection" in after[0]["author"]
+    # The record must look like an ordinary deployment: no hint that a fault was injected.
+    assert "fault" not in (after[0]["author"] + after[0]["description"]).lower()
+
+
+def test_admin_control_plane_calls_leave_no_trace_in_observability():
+    """Regression: POST /admin/fault/inject used to appear in /logs, /traces and /metrics,
+    so diagnostic agents could read the test harness as evidence."""
+    client.post("/admin/reset")
+    client.post("/admin/fault/inject", json={"fault_type": "db_slowdown"})
+    client.get("/admin/state")
+    client.post("/admin/recovery/restart_service")
+    assert not any("/admin" in str(e) for e in client.get("/logs").json()["entries"])
+    assert not any("/admin" in str(t) for t in client.get("/traces").json()["traces"])
+    assert not any("/admin" in ep for ep in client.get("/metrics").json()["by_endpoint"])
 
 
 def test_db_slowdown_adds_real_latency_to_orders():
@@ -117,3 +130,19 @@ def test_scale_resources_clears_capacity_faults():
 def test_rollback_deployment_requires_target_version():
     response = client.post("/admin/recovery/rollback_deployment", json={})
     assert response.status_code == 422  # pydantic: missing required field
+
+
+def test_admin_reset_wipes_fault_residue_between_scenarios():
+    """Regression: the '1.2.0-bad' change record and old errors from a bad_deployment
+    run used to survive a fault clear and contaminate the next benchmark scenario."""
+    client.post("/admin/fault/inject", json={"fault_type": "bad_deployment"})
+    for _ in range(5):
+        client.get("/orders")
+    assert any(c["version"] == "1.2.0-bad" for c in client.get("/changes").json()["changes"])
+    assert client.get("/metrics").json()["request_count"] >= 5
+
+    assert client.post("/admin/reset").json()["bad_deployment"] is False
+    assert not any(c["version"] == "1.2.0-bad" for c in client.get("/changes").json()["changes"])
+    assert len(client.get("/changes").json()["changes"]) == 3
+    assert not any("orders" in ep for ep in client.get("/metrics").json()["by_endpoint"])
+    assert not any("orders" in str(entry) for entry in client.get("/logs").json()["entries"])

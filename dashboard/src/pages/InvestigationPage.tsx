@@ -15,15 +15,21 @@ import { IncidentHumanCard } from "../components/command_center/IncidentHumanCar
 import { buildCommandCenterModel } from "../lib/presentation";
 import { a2aRows, buildEvidenceLookup, derivePhaseIndex, mcpRows } from "../lib/derive";
 import { rememberIncident } from "../lib/recentIncidents";
+import { getRecording } from "../api/recordings";
+import { incidentAt, useReplay } from "../lib/replay";
+import { RecordedBanner } from "../components/investigation/RecordedBanner";
 import styles from "./InvestigationPage.module.css";
 
 export function InvestigationPage() {
   const { incidentId } = useParams<{ incidentId: string }>();
   const incidentQuery = useIncidentQuery(incidentId);
   const eventsQuery = useIncidentEventsQuery(incidentId);
+  const recording = getRecording(incidentId);
+  const replay = useReplay(recording ? recording.events.length : 0);
 
   useEffect(() => {
-    if (incidentQuery.data) rememberIncident(incidentQuery.data);
+    // Recorded runs are not this viewer's own incidents; keep them out of the recent list.
+    if (incidentQuery.data && !recording) rememberIncident(incidentQuery.data);
   }, [incidentQuery.data]);
 
   if (incidentQuery.isLoading) {
@@ -57,8 +63,8 @@ export function InvestigationPage() {
     );
   }
 
-  const incident = incidentQuery.data!;
-  const events = eventsQuery.data ?? [];
+  const events = recording ? (eventsQuery.data ?? []).slice(0, replay.count) : (eventsQuery.data ?? []);
+  const incident = recording ? incidentAt(incidentQuery.data!, events) : incidentQuery.data!;
   const agentStates = deriveAgentStates(incident, events);
   const evidenceLookup = buildEvidenceLookup(incident);
   const phaseIndex = derivePhaseIndex(events);
@@ -67,6 +73,17 @@ export function InvestigationPage() {
 
   return (
     <div className={styles.page}>
+      {recording && (
+        <RecordedBanner
+          header={recording.recording}
+          shown={replay.count}
+          total={recording.events.length}
+          playing={replay.playing}
+          onTogglePlay={replay.togglePlay}
+          onRestart={replay.restart}
+          onShowAll={replay.showAll}
+        />
+      )}
       <TopBar
         incidentId={incident.incident_id}
         description={incident.description}

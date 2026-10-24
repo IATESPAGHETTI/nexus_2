@@ -42,6 +42,13 @@ CHANGE_HISTORY = [
 ]
 
 
+def reset() -> None:
+    """Test/demo reset: drops every change appended after startup (fault injection,
+    recovery actions), keeping the three seeded history entries."""
+    with _lock:
+        del CHANGE_HISTORY[3:]
+
+
 def recent(limit: int = 20) -> list:
     # Tie-break equal-second `deployed_at` timestamps by insertion order
     # (index) so two changes injected within the same second -- a real

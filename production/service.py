@@ -261,8 +261,8 @@ def admin_inject_fault(body: FaultInjectRequest) -> dict:
         changes.append(
             "deployment",
             new_state["deployed_version"],
-            "Deploy: refactored order total calculation (fault_injection)",
-            author="fault_injection",
+            "Deploy: refactored order total calculation",
+            author="ci-pipeline",
         )
     return new_state
 

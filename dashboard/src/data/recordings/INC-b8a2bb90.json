@@ -1,0 +1,1891 @@
+{
+ "recording": {
+  "scenario": "FI-bad-deployment",
+  "ground_truth": "bad_deployment",
+  "arm": "full NEXUS (all four specialists, recovery switched off)",
+  "model": "deepseek/deepseek-chat",
+  "source_report": "evaluation/results/2026-10-13T18-25-37Z.json",
+  "recorded_at": "2026-10-13T18:18:10Z",
+  "outcome": "correct",
+  "note": "A real investigation, copied unchanged from the backend store."
+ },
+ "incident": {
+  "incident_id": "INC-b8a2bb90",
+  "description": "A new deployment introduces a bug in order total calculation, causing ~35% of /orders and /orders/{id} requests to fail with a 500.",
+  "status": "DIAGNOSED",
+  "created_at": "2026-10-13T18:18:10Z",
+  "updated_at": "2026-10-13T18:18:34Z",
+  "timeline": [
+   {
+    "event_id": "evt-2022",
+    "timestamp": "2026-10-13T18:18:10Z",
+    "event_type": "INCIDENT_CREATED",
+    "source": "incident_manager",
+    "target": null
+   },
+   {
+    "event_id": "evt-2023",
+    "timestamp": "2026-10-13T18:18:10Z",
+    "event_type": "AGENTS_SELECTED",
+    "source": "incident_manager",
+    "target": null
+   },
+   {
+    "event_id": "evt-2024",
+    "timestamp": "2026-10-13T18:18:10Z",
+    "event_type": "AGENT_STARTED",
+    "source": "incident_manager",
+    "target": "metrics_agent"
+   },
+   {
+    "event_id": "evt-2025",
+    "timestamp": "2026-10-13T18:18:10Z",
+    "event_type": "AGENT_STARTED",
+    "source": "incident_manager",
+    "target": "logs_traces_agent"
+   },
+   {
+    "event_id": "evt-2026",
+    "timestamp": "2026-10-13T18:18:10Z",
+    "event_type": "AGENT_STARTED",
+    "source": "incident_manager",
+    "target": "change_analysis_agent"
+   },
+   {
+    "event_id": "evt-2027",
+    "timestamp": "2026-10-13T18:18:10Z",
+    "event_type": "AGENT_STARTED",
+    "source": "incident_manager",
+    "target": "database_agent"
+   },
+   {
+    "event_id": "evt-2028",
+    "timestamp": "2026-10-13T18:18:25Z",
+    "event_type": "A2A_MESSAGE_SENT",
+    "source": "incident_manager",
+    "target": "change_analysis_agent"
+   },
+   {
+    "event_id": "evt-2029",
+    "timestamp": "2026-10-13T18:18:25Z",
+    "event_type": "MCP_TOOL_CALL",
+    "source": "change_analysis_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2030",
+    "timestamp": "2026-10-13T18:18:25Z",
+    "event_type": "MCP_TOOL_RESULT",
+    "source": "change_analysis_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2031",
+    "timestamp": "2026-10-13T18:18:25Z",
+    "event_type": "AGENT_COMPLETED",
+    "source": "change_analysis_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2032",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "EVIDENCE_FOUND",
+    "source": "change_analysis_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2033",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "A2A_MESSAGE_SENT",
+    "source": "incident_manager",
+    "target": "metrics_agent"
+   },
+   {
+    "event_id": "evt-2034",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_CALL",
+    "source": "metrics_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2035",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_RESULT",
+    "source": "metrics_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2036",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "AGENT_COMPLETED",
+    "source": "metrics_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2037",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "EVIDENCE_FOUND",
+    "source": "metrics_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2038",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "A2A_MESSAGE_SENT",
+    "source": "incident_manager",
+    "target": "database_agent"
+   },
+   {
+    "event_id": "evt-2039",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_CALL",
+    "source": "database_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2040",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_RESULT",
+    "source": "database_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2041",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "AGENT_COMPLETED",
+    "source": "database_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2042",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "EVIDENCE_FOUND",
+    "source": "database_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2043",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "A2A_MESSAGE_SENT",
+    "source": "incident_manager",
+    "target": "logs_traces_agent"
+   },
+   {
+    "event_id": "evt-2044",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_CALL",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2045",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_RESULT",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2046",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_CALL",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2047",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_RESULT",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2048",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_CALL",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2049",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_RESULT",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2050",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_CALL",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2051",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "MCP_TOOL_RESULT",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2052",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "AGENT_COMPLETED",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2053",
+    "timestamp": "2026-10-13T18:18:26Z",
+    "event_type": "EVIDENCE_FOUND",
+    "source": "logs_traces_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2054",
+    "timestamp": "2026-10-13T18:18:30Z",
+    "event_type": "A2A_MESSAGE_SENT",
+    "source": "incident_manager",
+    "target": "evidence_agent"
+   },
+   {
+    "event_id": "evt-2055",
+    "timestamp": "2026-10-13T18:18:30Z",
+    "event_type": "HYPOTHESIS_CREATED",
+    "source": "evidence_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2056",
+    "timestamp": "2026-10-13T18:18:30Z",
+    "event_type": "HYPOTHESIS_CREATED",
+    "source": "evidence_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2057",
+    "timestamp": "2026-10-13T18:18:30Z",
+    "event_type": "RE_EVALUATION_STARTED",
+    "source": "root_cause_critic",
+    "target": "H1"
+   },
+   {
+    "event_id": "evt-2058",
+    "timestamp": "2026-10-13T18:18:34Z",
+    "event_type": "A2A_MESSAGE_SENT",
+    "source": "incident_manager",
+    "target": "root_cause_critic"
+   },
+   {
+    "event_id": "evt-2059",
+    "timestamp": "2026-10-13T18:18:34Z",
+    "event_type": "CRITIC_CHALLENGE",
+    "source": "root_cause_critic",
+    "target": "H1"
+   },
+   {
+    "event_id": "evt-2060",
+    "timestamp": "2026-10-13T18:18:34Z",
+    "event_type": "HYPOTHESIS_UPDATED",
+    "source": "evidence_agent",
+    "target": null
+   },
+   {
+    "event_id": "evt-2061",
+    "timestamp": "2026-10-13T18:18:34Z",
+    "event_type": "DIAGNOSIS_REACHED",
+    "source": "root_cause_critic",
+    "target": null
+   },
+   {
+    "event_id": "evt-2062",
+    "timestamp": "2026-10-13T18:18:34Z",
+    "event_type": "INCIDENT_STATUS_CHANGED",
+    "source": "incident_manager",
+    "target": null
+   }
+  ],
+  "evidence": {},
+  "agent_findings": {
+   "change_analysis_agent": {
+    "finding_id": "find-c55b7b6b",
+    "agent": "change_analysis_agent",
+    "observation": "get_recent_deployments({'limit': 20}) -> ok=True, fields=['changes']",
+    "source": "change_analysis_agent",
+    "window": {
+     "start": "2026-10-13T18:18:11Z",
+     "end": "2026-10-13T18:18:21Z"
+    },
+    "evidence": [
+     {
+      "evidence_id": "ev-126d4a58",
+      "tool": "get_recent_deployments",
+      "arguments": {
+       "limit": 20
+      },
+      "result": {
+       "ok": true,
+       "changes": [
+        {
+         "change_id": "chg-004",
+         "type": "deployment",
+         "version": "1.2.0-bad",
+         "deployed_at": "2026-10-13T18:18:08Z",
+         "description": "Deploy: refactored order total calculation",
+         "author": "ci-pipeline"
+        },
+        {
+         "change_id": "chg-003",
+         "type": "deployment",
+         "version": "1.1.0",
+         "deployed_at": "2026-09-18T10:00:00Z",
+         "description": "Added observability endpoints (metrics/logs/traces/changes/db).",
+         "author": "deepu"
+        },
+        {
+         "change_id": "chg-002",
+         "type": "config",
+         "version": "1.0.1",
+         "deployed_at": "2026-09-14T14:30:00Z",
+         "description": "Increased DB connection pool size placeholder for future load.",
+         "author": "deepu"
+        },
+        {
+         "change_id": "chg-001",
+         "type": "deployment",
+         "version": "1.0.0",
+         "deployed_at": "2026-09-10T09:00:00Z",
+         "description": "Initial release of nexus-production simulated service.",
+         "author": "deepu"
+        }
+       ]
+      },
+      "timestamp": "2026-10-13T18:18:20Z"
+     }
+    ],
+    "interpretation": "I'll investigate the recent deployment history to identify the change most likely related to this incident.The most recent change, chg-004 (deployment `1.2.0-bad` on 2026-10-13), is described as \"refactored order total calculation\" \u2014 directly matching the reported bug in order total calculation affecting /orders endpoints. It is the newest change by a wide margin (nearly a month after chg-003), making it the prime suspect.",
+    "confidence": 0.9,
+    "limitations": "none noted"
+   },
+   "metrics_agent": {
+    "finding_id": "find-ebedfc0b",
+    "agent": "metrics_agent",
+    "observation": "get_metrics({}) -> ok=True, fields=['request_count', 'error_count', 'by_endpoint']",
+    "source": "metrics_agent",
+    "window": {
+     "start": "2026-10-13T18:18:11Z",
+     "end": "2026-10-13T18:18:23Z"
+    },
+    "evidence": [
+     {
+      "evidence_id": "ev-bfa7208c",
+      "tool": "get_metrics",
+      "arguments": {},
+      "result": {
+       "ok": true,
+       "request_count": 40,
+       "error_count": 12,
+       "by_endpoint": {
+        "GET /health": {
+         "count": 7,
+         "error_count": 0,
+         "avg_latency_ms": 1.15,
+         "p99_latency_ms": 1.58
+        },
+        "GET /orders": {
+         "count": 15,
+         "error_count": 6,
+         "avg_latency_ms": 0.52,
+         "p99_latency_ms": 0.68
+        },
+        "GET /orders/1": {
+         "count": 15,
+         "error_count": 6,
+         "avg_latency_ms": 0.55,
+         "p99_latency_ms": 0.69
+        },
+        "GET /changes": {
+         "count": 1,
+         "error_count": 0,
+         "avg_latency_ms": 1.24,
+         "p99_latency_ms": 1.24
+        },
+        "GET /logs": {
+         "count": 2,
+         "error_count": 0,
+         "avg_latency_ms": 2.37,
+         "p99_latency_ms": 2.09
+        }
+       }
+      },
+      "timestamp": "2026-10-13T18:18:22Z"
+     }
+    ],
+    "interpretation": "I'll gather the actual metrics before interpreting.Metrics show GET /orders and GET /orders/1 each at 6/15 = 40% error rate (12 of the 40 total requests, 12 total errors), while /health, /changes, and /logs have zero errors. Latency is not the issue \u2014 the failing order endpoints are actually the fastest (p99 0.68 ms and 0.69 ms), so this looks like a functional/500-style failure rather than a performance problem.",
+    "confidence": 0.9,
+    "limitations": "none noted"
+   },
+   "database_agent": {
+    "finding_id": "find-846cb045",
+    "agent": "database_agent",
+    "observation": "get_database_stats({}) -> ok=True, fields=['engine', 'table_row_counts', 'orders_by_status', 'recent_queries', 'query_summary']",
+    "source": "database_agent",
+    "window": {
+     "start": "2026-10-13T18:18:11Z",
+     "end": "2026-10-13T18:18:24Z"
+    },
+    "evidence": [
+     {
+      "evidence_id": "ev-e7f5c562",
+      "tool": "get_database_stats",
+      "arguments": {},
+      "result": {
+       "ok": true,
+       "engine": "sqlite3 (in-memory, simulated)",
+       "table_row_counts": {
+        "orders": 10
+       },
+       "orders_by_status": {
+        "completed": 6,
+        "failed": 1,
+        "pending": 3
+       },
+       "recent_queries": [
+        {
+         "sql": "SELECT * FROM orders WHERE id = ?",
+         "duration_ms": 0.009,
+         "row_count": 1
+        },
+        {
+         "sql": "SELECT * FROM orders ORDER BY id",
+         "duration_ms": 0.016,
+         "row_count": 10
+        },
+        {
+         "sql": "SELECT * FROM orders WHERE id = ?",
+         "duration_ms": 0.011,
+         "row_count": 1
+        },
+        {
+         "sql": "SELECT * FROM orders ORDER BY id",
+         "duration_ms": 0.013,
+         "row_count": 10
+        },
+        {
+         "sql": "SELECT * FROM orders WHERE id = ?",
+         "duration_ms": 0.014,
+         "row_count": 1
+        },
+        {
+         "sql": "SELECT * FROM orders ORDER BY id",
+         "duration_ms": 0.025,
+         "row_count": 10
+        },
+        {
+         "sql": "SELECT * FROM orders ORDER BY id",
+         "duration_ms": 0.017,
+         "row_count": 10
+        },
+        {
+         "sql": "SELECT * FROM orders WHERE id = ?",
+         "duration_ms": 0.01,
+         "row_count": 1
+        },
+        {
+         "sql": "SELECT * FROM orders ORDER BY id",
+         "duration_ms": 0.021,
+         "row_count": 10
+        },
+        {
+         "sql": "SELECT * FROM orders ORDER BY id",
+         "duration_ms": 0.023,
+         "row_count": 10
+        }
+       ],
+       "query_summary": {
+        "total_queries": 18,
+        "avg_query_ms": 0.02
+       }
+      },
+      "timestamp": "2026-10-13T18:18:22Z"
+     }
+    ],
+    "interpretation": "I'll investigate the database health to look for evidence relevant to this incident.The database itself looks healthy: the `orders` table holds 10 rows (6 completed, 3 pending, 1 failed), and all recent queries are simple SELECTs returning correct row counts with sub-millisecond timings (avg 0.02 ms across 18 queries) \u2014 no slow queries, errors, or connection issues are visible.\n\nThis is consistent with the reported bug: the failures are in application-layer order total calculation, not the database, since reads complete quickly and successfully at the DB level. Note the tool doesn't capture application error rates, so a ~35% request failure rate producing 500s would occur after a successful query, and the \"1 failed\" order status is not necessarily related.",
+    "confidence": 0.7,
+    "limitations": "none noted"
+   },
+   "logs_traces_agent": {
+    "finding_id": "find-c0738de8",
+    "agent": "logs_traces_agent",
+    "observation": "query_logs({'level': 'ERROR', 'limit': 100}) -> ok=True, fields=['entries', 'count']; query_logs({'limit': 100}) -> ok=True, fields=['entries', 'count']; get_trace({'trace_id': '4e2b567d28c14b6c'}) -> ok=True, fields=['trace']; get_trace({'trace_id': '7edd7b0391084502'}) -> ok=True, fields=['trace']",
+    "source": "logs_traces_agent",
+    "window": {
+     "start": "2026-10-13T18:18:11Z",
+     "end": "2026-10-13T18:18:25Z"
+    },
+    "evidence": [
+     {
+      "evidence_id": "ev-c160d52d",
+      "tool": "query_logs",
+      "arguments": {
+       "level": "ERROR",
+       "limit": 100
+      },
+      "result": {
+       "ok": true,
+       "entries": [
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "4e2b567d28c14b6c",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.38,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "40a41516721b4ae4",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.36,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "22ad9a1fdc46424c",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.4,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "a8a7a21beab046f2",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.38,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "86f823c1fe044c87",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.35,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "21a6fdaca8574b3c",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.35,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "92778867798343e5",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.34,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "100d6bb28f9b4fa8",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.35,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "ce7072da881d4faf",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.58,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "dc5f48916379433c",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.4,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "0eee4777788949b5",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.64,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "79c75a82d74b43fa",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.65,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        }
+       ],
+       "count": 12
+      },
+      "timestamp": "2026-10-13T18:18:20Z"
+     },
+     {
+      "evidence_id": "ev-34972c75",
+      "tool": "query_logs",
+      "arguments": {
+       "limit": 100
+      },
+      "result": {
+       "ok": true,
+       "entries": [
+        {
+         "timestamp": "2026-10-13T18:18:19Z",
+         "level": "INFO",
+         "trace_id": "bf82c4cb8ad64e24",
+         "method": "GET",
+         "path": "/changes",
+         "status_code": 200,
+         "duration_ms": 1.24
+        },
+        {
+         "timestamp": "2026-10-13T18:18:15Z",
+         "level": "INFO",
+         "trace_id": "091365c0389646ca",
+         "method": "GET",
+         "path": "/health",
+         "status_code": 200,
+         "duration_ms": 0.93
+        },
+        {
+         "timestamp": "2026-10-13T18:18:15Z",
+         "level": "INFO",
+         "trace_id": "b9ea8ff80fb74d95",
+         "method": "GET",
+         "path": "/health",
+         "status_code": 200,
+         "duration_ms": 1.77
+        },
+        {
+         "timestamp": "2026-10-13T18:18:15Z",
+         "level": "INFO",
+         "trace_id": "ca358b3783e74c3b",
+         "method": "GET",
+         "path": "/health",
+         "status_code": 200,
+         "duration_ms": 1.58
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "4e2b567d28c14b6c",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.38,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "40a41516721b4ae4",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.36,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "7edd7b0391084502",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 200,
+         "duration_ms": 0.53
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "be3b3c5997e0401b",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 200,
+         "duration_ms": 0.52
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "8417b1dca03f408e",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 200,
+         "duration_ms": 0.53
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "d862d0f06a7b4102",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 200,
+         "duration_ms": 0.64
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "a675075aca264fee",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 200,
+         "duration_ms": 0.56
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "2883799cfa6e4307",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 200,
+         "duration_ms": 0.62
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "22ad9a1fdc46424c",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.4,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "dfac2f7719fc4374",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 200,
+         "duration_ms": 0.68
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "9344c584f2e64340",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 200,
+         "duration_ms": 0.59
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "e05c2228eb404255",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 200,
+         "duration_ms": 0.56
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "a8a7a21beab046f2",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.38,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "60b7940d225e4f75",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 200,
+         "duration_ms": 0.56
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "062af15ed03d43d7",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 200,
+         "duration_ms": 0.56
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "ba0584bf1c6d485a",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 200,
+         "duration_ms": 0.55
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "11971876c2714700",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 200,
+         "duration_ms": 0.76
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "86f823c1fe044c87",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.35,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "16a724108c5e4e5a",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 200,
+         "duration_ms": 0.69
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "21a6fdaca8574b3c",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.35,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "5907ae061108467b",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 200,
+         "duration_ms": 0.6
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "92778867798343e5",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.34,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "20106526ee2d441c",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 200,
+         "duration_ms": 0.59
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "100d6bb28f9b4fa8",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.35,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "ce7072da881d4faf",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.58,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "e93e7a4bdd36461a",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 200,
+         "duration_ms": 0.55
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "dc5f48916379433c",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.4,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "aba9b686aae840ea",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 200,
+         "duration_ms": 0.79
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "0eee4777788949b5",
+         "method": "GET",
+         "path": "/orders/1",
+         "status_code": 500,
+         "duration_ms": 0.64,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "ERROR",
+         "trace_id": "79c75a82d74b43fa",
+         "method": "GET",
+         "path": "/orders",
+         "status_code": 500,
+         "duration_ms": 0.65,
+         "error": "OrderServiceError: 'NoneType' object has no attribute 'total'"
+        },
+        {
+         "timestamp": "2026-10-13T18:18:10Z",
+         "level": "INFO",
+         "trace_id": "36a2277d02db49a0",
+         "method": "GET",
+         "path": "/health",
+         "status_code": 200,
+         "duration_ms": 0.8
+        }
+       ],
+       "count": 35
+      },
+      "timestamp": "2026-10-13T18:18:20Z"
+     },
+     {
+      "evidence_id": "ev-8f1bba6c",
+      "tool": "get_trace",
+      "arguments": {
+       "trace_id": "4e2b567d28c14b6c"
+      },
+      "result": {
+       "ok": true,
+       "trace": {
+        "trace_id": "4e2b567d28c14b6c",
+        "timestamp": "2026-10-13T18:18:10Z",
+        "method": "GET",
+        "path": "/orders/1",
+        "status_code": 500,
+        "duration_ms": 0.38
+       }
+      },
+      "timestamp": "2026-10-13T18:18:22Z"
+     },
+     {
+      "evidence_id": "ev-9db5cde3",
+      "tool": "get_trace",
+      "arguments": {
+       "trace_id": "7edd7b0391084502"
+      },
+      "result": {
+       "ok": true,
+       "trace": {
+        "trace_id": "7edd7b0391084502",
+        "timestamp": "2026-10-13T18:18:10Z",
+        "method": "GET",
+        "path": "/orders/1",
+        "status_code": 200,
+        "duration_ms": 0.53
+       }
+      },
+      "timestamp": "2026-10-13T18:18:22Z"
+     }
+    ],
+    "interpretation": "I'll investigate the logs and traces for evidence.I have strong log evidence. Let me examine one failing trace and one succeeding trace.## Findings\n\n**Logs:** 12 ERROR entries, all at 2026-10-13T18:18:10Z, exclusively on `GET /orders` and `GET /orders/1`, all returning 500. Every one carries the identical message: `OrderServiceError: 'NoneType' object has no attribute 'total'`. The mixed INFO/ERROR stream shows these failures are interleaved with successful 200s on the same paths (e.g. trace `7edd7b0391084502` GET /orders/1 returned 200), consistent with intermittent (~1/3) failure. The error is fast (0.34\u20130.65 ms), not a timeout \u2014 an immediate code-level exception, and the message points to total calculation dereferencing a `None` value.\n\n**Traces:** The failing trace (`4e2b567d28c14b6c`, /orders/1, 500) and a succeeding counterpart (`7edd7b0391084502`, /orders/1, 200) record only request-level metadata; no additional spans or stack detail are exposed. `/health` and `/changes` continue to return 200.\n\n**Interpretation:** The logs directly corroborate the reported bug: intermittent 500s on `/orders` and `/orders/{id}` caused by `OrderServiceError: 'NoneType' object has no attribute 'total'`, i.e. the order-total calculation fails when it receives a None. Traces add no span-level detail beyond confirming a mix of 500 and 200 responses on the same endpoint.",
+    "confidence": 0.85,
+    "limitations": "none noted"
+   }
+  },
+  "agent_messages": {
+   "change_analysis_agent": {
+    "task_id": "f8395611-8ffc-4f41-bfdc-0ec9cd8124e4",
+    "context_id": "3e3fbc41-b9ef-4c19-bb8b-87d57281e48d"
+   },
+   "metrics_agent": {
+    "task_id": "f8affafe-abde-42bf-88f5-e28e45db2f48",
+    "context_id": "1ca4a4bd-7058-402c-8a40-ed9aec18ad35"
+   },
+   "database_agent": {
+    "task_id": "831b2629-a6f5-4c19-9fc7-8c70cb691010",
+    "context_id": "c333d9a8-2855-4483-a0d6-aa75a417248f"
+   },
+   "logs_traces_agent": {
+    "task_id": "6fb07c9c-0c97-40d4-aeea-f9808276164f",
+    "context_id": "5705e19f-a569-4de7-b387-5821e4277441"
+   }
+  },
+  "hypotheses": [
+   {
+    "hypothesis_id": "H1",
+    "statement": "The incident is caused by the deployment of version 1.2.0-bad at 2026-10-13T18:18:08Z ('refactored order total calculation'), which introduced a bad code change that intermittently dereferences a None order total (\"'NoneType' object has no attribute 'total'\"), producing fast 500 errors on GET /orders and GET /orders/1 while other endpoints remain healthy.",
+    "supporting_evidence_ids": [
+     "ev-126d4a58",
+     "ev-bfa7208c",
+     "ev-c160d52d",
+     "ev-8f1bba6c",
+     "ev-9db5cde3"
+    ],
+    "contradicting_evidence_ids": [],
+    "confidence": 0.9,
+    "missing_evidence": [
+     "Commit diff or release notes for chg-004 / version 1.2.0-bad showing the order total calculation change",
+     "Before/after error-rate comparison across the 18:18:08Z deployment boundary to confirm onset coincides with the deploy",
+     "Source-level stack trace for the OrderServiceError to confirm the None dereference originates in the refactored total calculation"
+    ],
+    "requested_next_investigation": "Inspect the code change in deployment 1.2.0-bad (chg-004) covering the order total calculation and roll it back or fix the None handling.",
+    "fault_class": "bad_deployment",
+    "status": "SUPPORTED",
+    "revision": 1,
+    "created_at": "2026-10-13T18:18:30Z",
+    "dropped_invented_evidence_ids": 0
+   },
+   {
+    "hypothesis_id": "H2",
+    "statement": "The 500 errors on /orders endpoints stem from a code-level defect in OrderService total calculation that receives a null/None order total, causing an immediate application exception rather than a performance or database problem, as evidenced by fast failures (0.34-0.65 ms) that occur after successful sub-millisecond DB queries.",
+    "supporting_evidence_ids": [
+     "ev-c160d52d",
+     "ev-e7f5c562",
+     "ev-bfa7208c",
+     "ev-8f1bba6c"
+    ],
+    "contradicting_evidence_ids": [],
+    "confidence": 0.8,
+    "missing_evidence": [
+     "Application source code for the order total calculation and its null-handling logic",
+     "Input data identifying which orders produce a None total (e.g., orders with missing line items or status)",
+     "Confirmation that the DB queries returning rows are the same requests that subsequently fail in the app layer"
+    ],
+    "requested_next_investigation": "Trace the OrderService code path from successful DB query to the None-type failure in total calculation.",
+    "fault_class": "bad_deployment",
+    "status": "PROPOSED",
+    "revision": 1,
+    "created_at": "2026-10-13T18:18:30Z",
+    "dropped_invented_evidence_ids": 0
+   }
+  ],
+  "critic_results": [
+   {
+    "critique_id": "crit-93ebe64d",
+    "hypothesis_id": "H1",
+    "verdict": "SUPPORTED",
+    "contradictions": [],
+    "unsupported_assumptions": [
+     "That the None dereference specifically originates in the refactored total calculation rather than anywhere else in the order rendering path touched by the deploy",
+     "That the error is 'intermittent' by exact code branch rather than dependent on which specific order records (e.g., orders lacking a total) are requested",
+     "That the pre-deploy period had zero comparable error rates -- no before-onset metrics were inspected",
+     "That the 500s began exactly at the 18:18:08Z deploy boundary; the earliest observed error is 18:18:10Z and there is no pre-deploy baseline in the pool"
+    ],
+    "alternative_explanations": [
+     "A data problem: one or more order records have a null/missing total, and the new code path surfaces the resulting NoneType error only for those records (the DB shows orders with status failed/pending that could plausibly lack totals), independent of any code defect in the refactor itself",
+     "A configuration/state inconsistency introduced alongside the deploy rather than the code change itself, though no config change appears near the deploy time",
+     "A latent bug pre-existing in 1.1.0 that was only exposed by the new code path or by the current order data set"
+    ],
+    "requested_evidence": [
+     "Endpoint error-rate/latency metrics for a window before 18:18:08Z (e.g., pre-deploy) vs after, to confirm a step change in /orders error rate coinciding with the deploy",
+     "Deployment/release notes or change detail for chg-004 describing exactly what the 'refactored order total calculation' changed (the reachable change-history field for that deploy)"
+    ],
+    "rationale": "The only deployment in the incident window (chg-004, v1.2.0-bad, 18:18:08Z) immediately precedes the first 500s at 18:18:10Z; all 12 errors are concentrated on /orders and /orders/1 with a single consistent NoneType 'total' error, while /health, /changes and /logs are clean and DB queries are fast (~0.02ms), so a backend/DB-infrastructure cause is ruled out. The successful 200s at the same time are the normal partial-failure signature and do not contradict the hypothesis.",
+    "evidence_pool_size": 7,
+    "timestamp": "2026-10-13T18:18:34Z"
+   }
+  ],
+  "experiments": [],
+  "recovery_plan": null,
+  "approval_state": null,
+  "action_history": [],
+  "token_usage": {
+   "measured_by": "NEXUS, from the model usage each agent reported",
+   "total": {
+    "llm_calls": 11,
+    "prompt_tokens": 39612,
+    "completion_tokens": 2047,
+    "total_tokens": 41659
+   },
+   "by_agent": {
+    "change_analysis_agent": {
+     "llm_calls": 2,
+     "prompt_tokens": 1906,
+     "completion_tokens": 149,
+     "total_tokens": 2055,
+     "tasks": 1
+    },
+    "metrics_agent": {
+     "llm_calls": 2,
+     "prompt_tokens": 1682,
+     "completion_tokens": 136,
+     "total_tokens": 1818,
+     "tasks": 1
+    },
+    "database_agent": {
+     "llm_calls": 2,
+     "prompt_tokens": 1991,
+     "completion_tokens": 192,
+     "total_tokens": 2183,
+     "tasks": 1
+    },
+    "logs_traces_agent": {
+     "llm_calls": 3,
+     "prompt_tokens": 20841,
+     "completion_tokens": 536,
+     "total_tokens": 21377,
+     "tasks": 1
+    },
+    "evidence_agent": {
+     "llm_calls": 1,
+     "prompt_tokens": 6936,
+     "completion_tokens": 538,
+     "total_tokens": 7474,
+     "tasks": 1
+    },
+    "root_cause_critic": {
+     "llm_calls": 1,
+     "prompt_tokens": 6256,
+     "completion_tokens": 496,
+     "total_tokens": 6752,
+     "tasks": 1
+    }
+   },
+   "unmeasured_tasks": 0,
+   "limits": {
+    "max_llm_calls": 60,
+    "max_total_tokens": 250000,
+    "max_tokens_per_agent": 80000
+   },
+   "budget_exceeded": null
+  },
+  "decision": {
+   "outcome": "DIAGNOSED",
+   "reason": "hypothesis H1 SUPPORTED by root-cause critic",
+   "loops_used": 1,
+   "max_loops": 3
+  }
+ },
+ "events": [
+  {
+   "event_id": "evt-2022",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:10Z",
+   "event_type": "INCIDENT_CREATED",
+   "source": "incident_manager",
+   "target": null,
+   "status": null,
+   "payload": {
+    "description": "A new deployment introduces a bug in order total calculation, causing ~35% of /orders and /orders/{id} requests to fail with a 500."
+   }
+  },
+  {
+   "event_id": "evt-2023",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:10Z",
+   "event_type": "AGENTS_SELECTED",
+   "source": "incident_manager",
+   "target": null,
+   "status": null,
+   "payload": {
+    "round": 1,
+    "selected": [
+     "metrics_agent",
+     "logs_traces_agent",
+     "change_analysis_agent",
+     "database_agent"
+    ],
+    "skipped": []
+   }
+  },
+  {
+   "event_id": "evt-2024",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:10Z",
+   "event_type": "AGENT_STARTED",
+   "source": "incident_manager",
+   "target": "metrics_agent",
+   "status": null,
+   "payload": {}
+  },
+  {
+   "event_id": "evt-2025",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:10Z",
+   "event_type": "AGENT_STARTED",
+   "source": "incident_manager",
+   "target": "logs_traces_agent",
+   "status": null,
+   "payload": {}
+  },
+  {
+   "event_id": "evt-2026",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:10Z",
+   "event_type": "AGENT_STARTED",
+   "source": "incident_manager",
+   "target": "change_analysis_agent",
+   "status": null,
+   "payload": {}
+  },
+  {
+   "event_id": "evt-2027",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:10Z",
+   "event_type": "AGENT_STARTED",
+   "source": "incident_manager",
+   "target": "database_agent",
+   "status": null,
+   "payload": {}
+  },
+  {
+   "event_id": "evt-2028",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:25Z",
+   "event_type": "A2A_MESSAGE_SENT",
+   "source": "incident_manager",
+   "target": "change_analysis_agent",
+   "status": "completed",
+   "payload": {
+    "task_id": "f8395611-8ffc-4f41-bfdc-0ec9cd8124e4",
+    "context_id": "3e3fbc41-b9ef-4c19-bb8b-87d57281e48d"
+   }
+  },
+  {
+   "event_id": "evt-2029",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:25Z",
+   "event_type": "MCP_TOOL_CALL",
+   "source": "change_analysis_agent",
+   "target": null,
+   "status": "ok",
+   "payload": {
+    "tool": "get_recent_deployments",
+    "arguments": {
+     "limit": 20
+    },
+    "evidence_id": "ev-126d4a58"
+   }
+  },
+  {
+   "event_id": "evt-2030",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:25Z",
+   "event_type": "MCP_TOOL_RESULT",
+   "source": "change_analysis_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "evidence_id": "ev-126d4a58",
+    "tool": "get_recent_deployments"
+   }
+  },
+  {
+   "event_id": "evt-2031",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:25Z",
+   "event_type": "AGENT_COMPLETED",
+   "source": "change_analysis_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "finding_id": "find-c55b7b6b",
+    "confidence": 0.9
+   }
+  },
+  {
+   "event_id": "evt-2032",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "EVIDENCE_FOUND",
+   "source": "change_analysis_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "finding_id": "find-c55b7b6b",
+    "evidence_ids": [
+     "ev-126d4a58"
+    ]
+   }
+  },
+  {
+   "event_id": "evt-2033",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "A2A_MESSAGE_SENT",
+   "source": "incident_manager",
+   "target": "metrics_agent",
+   "status": "completed",
+   "payload": {
+    "task_id": "f8affafe-abde-42bf-88f5-e28e45db2f48",
+    "context_id": "1ca4a4bd-7058-402c-8a40-ed9aec18ad35"
+   }
+  },
+  {
+   "event_id": "evt-2034",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_CALL",
+   "source": "metrics_agent",
+   "target": null,
+   "status": "ok",
+   "payload": {
+    "tool": "get_metrics",
+    "arguments": {},
+    "evidence_id": "ev-bfa7208c"
+   }
+  },
+  {
+   "event_id": "evt-2035",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_RESULT",
+   "source": "metrics_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "evidence_id": "ev-bfa7208c",
+    "tool": "get_metrics"
+   }
+  },
+  {
+   "event_id": "evt-2036",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "AGENT_COMPLETED",
+   "source": "metrics_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "finding_id": "find-ebedfc0b",
+    "confidence": 0.9
+   }
+  },
+  {
+   "event_id": "evt-2037",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "EVIDENCE_FOUND",
+   "source": "metrics_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "finding_id": "find-ebedfc0b",
+    "evidence_ids": [
+     "ev-bfa7208c"
+    ]
+   }
+  },
+  {
+   "event_id": "evt-2038",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "A2A_MESSAGE_SENT",
+   "source": "incident_manager",
+   "target": "database_agent",
+   "status": "completed",
+   "payload": {
+    "task_id": "831b2629-a6f5-4c19-9fc7-8c70cb691010",
+    "context_id": "c333d9a8-2855-4483-a0d6-aa75a417248f"
+   }
+  },
+  {
+   "event_id": "evt-2039",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_CALL",
+   "source": "database_agent",
+   "target": null,
+   "status": "ok",
+   "payload": {
+    "tool": "get_database_stats",
+    "arguments": {},
+    "evidence_id": "ev-e7f5c562"
+   }
+  },
+  {
+   "event_id": "evt-2040",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_RESULT",
+   "source": "database_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "evidence_id": "ev-e7f5c562",
+    "tool": "get_database_stats"
+   }
+  },
+  {
+   "event_id": "evt-2041",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "AGENT_COMPLETED",
+   "source": "database_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "finding_id": "find-846cb045",
+    "confidence": 0.7
+   }
+  },
+  {
+   "event_id": "evt-2042",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "EVIDENCE_FOUND",
+   "source": "database_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "finding_id": "find-846cb045",
+    "evidence_ids": [
+     "ev-e7f5c562"
+    ]
+   }
+  },
+  {
+   "event_id": "evt-2043",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "A2A_MESSAGE_SENT",
+   "source": "incident_manager",
+   "target": "logs_traces_agent",
+   "status": "completed",
+   "payload": {
+    "task_id": "6fb07c9c-0c97-40d4-aeea-f9808276164f",
+    "context_id": "5705e19f-a569-4de7-b387-5821e4277441"
+   }
+  },
+  {
+   "event_id": "evt-2044",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_CALL",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": "ok",
+   "payload": {
+    "tool": "query_logs",
+    "arguments": {
+     "level": "ERROR",
+     "limit": 100
+    },
+    "evidence_id": "ev-c160d52d"
+   }
+  },
+  {
+   "event_id": "evt-2045",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_RESULT",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "evidence_id": "ev-c160d52d",
+    "tool": "query_logs"
+   }
+  },
+  {
+   "event_id": "evt-2046",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_CALL",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": "ok",
+   "payload": {
+    "tool": "query_logs",
+    "arguments": {
+     "limit": 100
+    },
+    "evidence_id": "ev-34972c75"
+   }
+  },
+  {
+   "event_id": "evt-2047",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_RESULT",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "evidence_id": "ev-34972c75",
+    "tool": "query_logs"
+   }
+  },
+  {
+   "event_id": "evt-2048",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_CALL",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": "ok",
+   "payload": {
+    "tool": "get_trace",
+    "arguments": {
+     "trace_id": "4e2b567d28c14b6c"
+    },
+    "evidence_id": "ev-8f1bba6c"
+   }
+  },
+  {
+   "event_id": "evt-2049",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_RESULT",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "evidence_id": "ev-8f1bba6c",
+    "tool": "get_trace"
+   }
+  },
+  {
+   "event_id": "evt-2050",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_CALL",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": "ok",
+   "payload": {
+    "tool": "get_trace",
+    "arguments": {
+     "trace_id": "7edd7b0391084502"
+    },
+    "evidence_id": "ev-9db5cde3"
+   }
+  },
+  {
+   "event_id": "evt-2051",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "MCP_TOOL_RESULT",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "evidence_id": "ev-9db5cde3",
+    "tool": "get_trace"
+   }
+  },
+  {
+   "event_id": "evt-2052",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "AGENT_COMPLETED",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "finding_id": "find-c0738de8",
+    "confidence": 0.85
+   }
+  },
+  {
+   "event_id": "evt-2053",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:26Z",
+   "event_type": "EVIDENCE_FOUND",
+   "source": "logs_traces_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "finding_id": "find-c0738de8",
+    "evidence_ids": [
+     "ev-c160d52d",
+     "ev-34972c75",
+     "ev-8f1bba6c",
+     "ev-9db5cde3"
+    ]
+   }
+  },
+  {
+   "event_id": "evt-2054",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:30Z",
+   "event_type": "A2A_MESSAGE_SENT",
+   "source": "incident_manager",
+   "target": "evidence_agent",
+   "status": "completed",
+   "payload": {
+    "task_id": "48695d26-a823-4b83-aa78-0b5c9ccb89ab",
+    "context_id": "7b706b1c-f9da-4bbf-a2bd-a8bbc7de713e"
+   }
+  },
+  {
+   "event_id": "evt-2055",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:30Z",
+   "event_type": "HYPOTHESIS_CREATED",
+   "source": "evidence_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "hypothesis_id": "H1",
+    "statement": "The incident is caused by the deployment of version 1.2.0-bad at 2026-10-13T18:18:08Z ('refactored order total calculation'), which introduced a bad code change that intermittently dereferences a None order total (\"'NoneType' object has no attribute 'total'\"), producing fast 500 errors on GET /orders and GET /orders/1 while other endpoints remain healthy.",
+    "supporting_evidence_ids": [
+     "ev-126d4a58",
+     "ev-bfa7208c",
+     "ev-c160d52d",
+     "ev-8f1bba6c",
+     "ev-9db5cde3"
+    ],
+    "contradicting_evidence_ids": [],
+    "confidence": 0.9,
+    "missing_evidence": [
+     "Commit diff or release notes for chg-004 / version 1.2.0-bad showing the order total calculation change",
+     "Before/after error-rate comparison across the 18:18:08Z deployment boundary to confirm onset coincides with the deploy",
+     "Source-level stack trace for the OrderServiceError to confirm the None dereference originates in the refactored total calculation"
+    ],
+    "requested_next_investigation": "Inspect the code change in deployment 1.2.0-bad (chg-004) covering the order total calculation and roll it back or fix the None handling.",
+    "fault_class": "bad_deployment",
+    "status": "PROPOSED",
+    "revision": 1,
+    "created_at": "2026-10-13T18:18:30Z",
+    "dropped_invented_evidence_ids": 0
+   }
+  },
+  {
+   "event_id": "evt-2056",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:30Z",
+   "event_type": "HYPOTHESIS_CREATED",
+   "source": "evidence_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "hypothesis_id": "H2",
+    "statement": "The 500 errors on /orders endpoints stem from a code-level defect in OrderService total calculation that receives a null/None order total, causing an immediate application exception rather than a performance or database problem, as evidenced by fast failures (0.34-0.65 ms) that occur after successful sub-millisecond DB queries.",
+    "supporting_evidence_ids": [
+     "ev-c160d52d",
+     "ev-e7f5c562",
+     "ev-bfa7208c",
+     "ev-8f1bba6c"
+    ],
+    "contradicting_evidence_ids": [],
+    "confidence": 0.8,
+    "missing_evidence": [
+     "Application source code for the order total calculation and its null-handling logic",
+     "Input data identifying which orders produce a None total (e.g., orders with missing line items or status)",
+     "Confirmation that the DB queries returning rows are the same requests that subsequently fail in the app layer"
+    ],
+    "requested_next_investigation": "Trace the OrderService code path from successful DB query to the None-type failure in total calculation.",
+    "fault_class": "bad_deployment",
+    "status": "PROPOSED",
+    "revision": 1,
+    "created_at": "2026-10-13T18:18:30Z",
+    "dropped_invented_evidence_ids": 0
+   }
+  },
+  {
+   "event_id": "evt-2057",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:30Z",
+   "event_type": "RE_EVALUATION_STARTED",
+   "source": "root_cause_critic",
+   "target": "H1",
+   "status": null,
+   "payload": {
+    "loop": 1,
+    "max_loops": 3
+   }
+  },
+  {
+   "event_id": "evt-2058",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:34Z",
+   "event_type": "A2A_MESSAGE_SENT",
+   "source": "incident_manager",
+   "target": "root_cause_critic",
+   "status": "completed",
+   "payload": {
+    "task_id": "423a05b7-4bda-4dfb-bfa1-c1b251d1676a",
+    "context_id": "78c886b4-9197-4048-b377-d1316600a7b2"
+   }
+  },
+  {
+   "event_id": "evt-2059",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:34Z",
+   "event_type": "CRITIC_CHALLENGE",
+   "source": "root_cause_critic",
+   "target": "H1",
+   "status": null,
+   "payload": {
+    "critique_id": "crit-93ebe64d",
+    "hypothesis_id": "H1",
+    "verdict": "SUPPORTED",
+    "contradictions": [],
+    "unsupported_assumptions": [
+     "That the None dereference specifically originates in the refactored total calculation rather than anywhere else in the order rendering path touched by the deploy",
+     "That the error is 'intermittent' by exact code branch rather than dependent on which specific order records (e.g., orders lacking a total) are requested",
+     "That the pre-deploy period had zero comparable error rates -- no before-onset metrics were inspected",
+     "That the 500s began exactly at the 18:18:08Z deploy boundary; the earliest observed error is 18:18:10Z and there is no pre-deploy baseline in the pool"
+    ],
+    "alternative_explanations": [
+     "A data problem: one or more order records have a null/missing total, and the new code path surfaces the resulting NoneType error only for those records (the DB shows orders with status failed/pending that could plausibly lack totals), independent of any code defect in the refactor itself",
+     "A configuration/state inconsistency introduced alongside the deploy rather than the code change itself, though no config change appears near the deploy time",
+     "A latent bug pre-existing in 1.1.0 that was only exposed by the new code path or by the current order data set"
+    ],
+    "requested_evidence": [
+     "Endpoint error-rate/latency metrics for a window before 18:18:08Z (e.g., pre-deploy) vs after, to confirm a step change in /orders error rate coinciding with the deploy",
+     "Deployment/release notes or change detail for chg-004 describing exactly what the 'refactored order total calculation' changed (the reachable change-history field for that deploy)"
+    ],
+    "rationale": "The only deployment in the incident window (chg-004, v1.2.0-bad, 18:18:08Z) immediately precedes the first 500s at 18:18:10Z; all 12 errors are concentrated on /orders and /orders/1 with a single consistent NoneType 'total' error, while /health, /changes and /logs are clean and DB queries are fast (~0.02ms), so a backend/DB-infrastructure cause is ruled out. The successful 200s at the same time are the normal partial-failure signature and do not contradict the hypothesis.",
+    "evidence_pool_size": 7,
+    "timestamp": "2026-10-13T18:18:34Z"
+   }
+  },
+  {
+   "event_id": "evt-2060",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:34Z",
+   "event_type": "HYPOTHESIS_UPDATED",
+   "source": "evidence_agent",
+   "target": null,
+   "status": null,
+   "payload": {
+    "hypothesis_id": "H1",
+    "statement": "The incident is caused by the deployment of version 1.2.0-bad at 2026-10-13T18:18:08Z ('refactored order total calculation'), which introduced a bad code change that intermittently dereferences a None order total (\"'NoneType' object has no attribute 'total'\"), producing fast 500 errors on GET /orders and GET /orders/1 while other endpoints remain healthy.",
+    "supporting_evidence_ids": [
+     "ev-126d4a58",
+     "ev-bfa7208c",
+     "ev-c160d52d",
+     "ev-8f1bba6c",
+     "ev-9db5cde3"
+    ],
+    "contradicting_evidence_ids": [],
+    "confidence": 0.9,
+    "missing_evidence": [
+     "Commit diff or release notes for chg-004 / version 1.2.0-bad showing the order total calculation change",
+     "Before/after error-rate comparison across the 18:18:08Z deployment boundary to confirm onset coincides with the deploy",
+     "Source-level stack trace for the OrderServiceError to confirm the None dereference originates in the refactored total calculation"
+    ],
+    "requested_next_investigation": "Inspect the code change in deployment 1.2.0-bad (chg-004) covering the order total calculation and roll it back or fix the None handling.",
+    "fault_class": "bad_deployment",
+    "status": "SUPPORTED",
+    "revision": 1,
+    "created_at": "2026-10-13T18:18:30Z",
+    "dropped_invented_evidence_ids": 0
+   }
+  },
+  {
+   "event_id": "evt-2061",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:34Z",
+   "event_type": "DIAGNOSIS_REACHED",
+   "source": "root_cause_critic",
+   "target": null,
+   "status": null,
+   "payload": {
+    "hypothesis": {
+     "hypothesis_id": "H1",
+     "statement": "The incident is caused by the deployment of version 1.2.0-bad at 2026-10-13T18:18:08Z ('refactored order total calculation'), which introduced a bad code change that intermittently dereferences a None order total (\"'NoneType' object has no attribute 'total'\"), producing fast 500 errors on GET /orders and GET /orders/1 while other endpoints remain healthy.",
+     "supporting_evidence_ids": [
+      "ev-126d4a58",
+      "ev-bfa7208c",
+      "ev-c160d52d",
+      "ev-8f1bba6c",
+      "ev-9db5cde3"
+     ],
+     "contradicting_evidence_ids": [],
+     "confidence": 0.9,
+     "missing_evidence": [
+      "Commit diff or release notes for chg-004 / version 1.2.0-bad showing the order total calculation change",
+      "Before/after error-rate comparison across the 18:18:08Z deployment boundary to confirm onset coincides with the deploy",
+      "Source-level stack trace for the OrderServiceError to confirm the None dereference originates in the refactored total calculation"
+     ],
+     "requested_next_investigation": "Inspect the code change in deployment 1.2.0-bad (chg-004) covering the order total calculation and roll it back or fix the None handling.",
+     "fault_class": "bad_deployment",
+     "status": "SUPPORTED",
+     "revision": 1,
+     "created_at": "2026-10-13T18:18:30Z",
+     "dropped_invented_evidence_ids": 0
+    },
+    "critique": {
+     "critique_id": "crit-93ebe64d",
+     "hypothesis_id": "H1",
+     "verdict": "SUPPORTED",
+     "contradictions": [],
+     "unsupported_assumptions": [
+      "That the None dereference specifically originates in the refactored total calculation rather than anywhere else in the order rendering path touched by the deploy",
+      "That the error is 'intermittent' by exact code branch rather than dependent on which specific order records (e.g., orders lacking a total) are requested",
+      "That the pre-deploy period had zero comparable error rates -- no before-onset metrics were inspected",
+      "That the 500s began exactly at the 18:18:08Z deploy boundary; the earliest observed error is 18:18:10Z and there is no pre-deploy baseline in the pool"
+     ],
+     "alternative_explanations": [
+      "A data problem: one or more order records have a null/missing total, and the new code path surfaces the resulting NoneType error only for those records (the DB shows orders with status failed/pending that could plausibly lack totals), independent of any code defect in the refactor itself",
+      "A configuration/state inconsistency introduced alongside the deploy rather than the code change itself, though no config change appears near the deploy time",
+      "A latent bug pre-existing in 1.1.0 that was only exposed by the new code path or by the current order data set"
+     ],
+     "requested_evidence": [
+      "Endpoint error-rate/latency metrics for a window before 18:18:08Z (e.g., pre-deploy) vs after, to confirm a step change in /orders error rate coinciding with the deploy",
+      "Deployment/release notes or change detail for chg-004 describing exactly what the 'refactored order total calculation' changed (the reachable change-history field for that deploy)"
+     ],
+     "rationale": "The only deployment in the incident window (chg-004, v1.2.0-bad, 18:18:08Z) immediately precedes the first 500s at 18:18:10Z; all 12 errors are concentrated on /orders and /orders/1 with a single consistent NoneType 'total' error, while /health, /changes and /logs are clean and DB queries are fast (~0.02ms), so a backend/DB-infrastructure cause is ruled out. The successful 200s at the same time are the normal partial-failure signature and do not contradict the hypothesis.",
+     "evidence_pool_size": 7,
+     "timestamp": "2026-10-13T18:18:34Z"
+    }
+   }
+  },
+  {
+   "event_id": "evt-2062",
+   "incident_id": "INC-b8a2bb90",
+   "timestamp": "2026-10-13T18:18:34Z",
+   "event_type": "INCIDENT_STATUS_CHANGED",
+   "source": "incident_manager",
+   "target": null,
+   "status": null,
+   "payload": {
+    "status": "DIAGNOSED"
+   }
+  }
+ ]
+}

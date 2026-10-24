@@ -70,64 +70,101 @@ const REASONING: [string, number][] = [
 function Diagram() {
   const line = "#4a4a4a";
   const brand = "#f34e3f";
+  const quiet = "#8a8a8a";
   return (
     <svg
       className={styles.svg}
-      viewBox="0 0 760 400"
+      viewBox="0 0 780 522"
       role="img"
-      aria-label="Incident Manager in the centre calling four specialist agents in parallel above it and the Evidence, Critic and Recovery agents in sequence below it, with guardrails on the left and the event store on the right"
+      aria-label="The Incident Manager in the centre calls four specialist agents in parallel above it. The specialists read a simulated shop through MCP tools. Below it the Evidence, Critic and Recovery agents are called in sequence, and the Critic can send the investigation back to the specialists for up to three rounds. Guardrails on the left check a proposed fix, wait for human approval, and only then change the shop. The event store on the right records every step."
     >
+      <defs>
+        <marker id="arch-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill={brand} />
+        </marker>
+        <marker id="arch-arrow-quiet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill={quiet} />
+        </marker>
+      </defs>
+
+      {/* ---- tool layer: specialists -> MCP -> the simulated shop ---- */}
       {SPECIALISTS.map(([, ], i) => {
         const cx = 125 + i * 170;
-        return <line key={i} x1={380} y1={170} x2={cx} y2={80} stroke={brand} strokeWidth={1.5} className={styles.flow} />;
+        return <line key={i} x1={cx} y1={126} x2={380} y2={64} stroke={line} strokeWidth={1.2} />;
       })}
-      {REASONING.map(([, ], i) => {
-        const cx = 190 + i * 190;
-        return <line key={i} x1={380} y1={226} x2={cx} y2={320} stroke={line} strokeWidth={1.5} />;
-      })}
-      <line x1={170} y1={198} x2={290} y2={198} stroke={line} strokeWidth={1.5} />
-      <line x1={470} y1={198} x2={590} y2={198} stroke={line} strokeWidth={1.5} strokeDasharray="5 5" />
+      <rect x={280} y={14} width={200} height={50} rx={10} className={styles.box} />
+      <text x={380} y={36} className={styles.boxName}>Simulated shop</text>
+      <text x={380} y={53} className={styles.boxSub}>production · :8001</text>
+      <rect x={265} y={78} width={230} height={22} rx={11} className={styles.pill} />
+      <text x={380} y={93} className={styles.pillText}>MCP tools · one stdio server per task</text>
 
-      {SPECIALISTS.map(([name, port], i) => {
-        const x = 50 + i * 170;
-        return (
-          <g key={name}>
-            <rect x={x} y={26} width={150} height={54} rx={10} className={styles.box} />
-            <text x={x + 75} y={49} className={styles.boxName}>{name}</text>
-            <text x={x + 75} y={67} className={styles.boxSub}>A2A :{port} · MCP tools</text>
-          </g>
-        );
-      })}
-      {REASONING.map(([name, port], i) => {
-        const x = 115 + i * 190;
-        return (
-          <g key={name}>
-            <rect x={x} y={320} width={150} height={54} rx={10} className={styles.box} />
-            <text x={x + 75} y={343} className={styles.boxName}>{name}</text>
-            <text x={x + 75} y={361} className={styles.boxSub}>A2A :{port} · no tools</text>
-          </g>
-        );
-      })}
+      {/* ---- the original hub-and-spoke, shifted down ---- */}
+      <g transform="translate(0,100)">
+        {SPECIALISTS.map(([, ], i) => {
+          const cx = 125 + i * 170;
+          return <line key={i} x1={380} y1={170} x2={cx} y2={80} stroke={brand} strokeWidth={1.5} className={styles.flow} />;
+        })}
+        {REASONING.map(([, ], i) => {
+          const cx = 190 + i * 190;
+          return <line key={i} x1={380} y1={226} x2={cx} y2={320} stroke={line} strokeWidth={1.5} />;
+        })}
+        <line x1={170} y1={198} x2={290} y2={198} stroke={line} strokeWidth={1.5} />
+        <line x1={470} y1={198} x2={590} y2={198} stroke={line} strokeWidth={1.5} strokeDasharray="5 5" />
 
-      <rect x={290} y={170} width={180} height={56} rx={12} className={styles.hub} />
-      <text x={380} y={194} className={styles.hubName}>Incident Manager</text>
-      <text x={380} y={212} className={styles.boxSub}>orchestrator</text>
+        {SPECIALISTS.map(([name, port], i) => {
+          const x = 50 + i * 170;
+          return (
+            <g key={name}>
+              <rect x={x} y={26} width={150} height={54} rx={10} className={styles.box} />
+              <text x={x + 75} y={49} className={styles.boxName}>{name}</text>
+              <text x={x + 75} y={67} className={styles.boxSub}>A2A :{port} · MCP tools</text>
+            </g>
+          );
+        })}
+        {REASONING.map(([name, port], i) => {
+          const x = 115 + i * 190;
+          return (
+            <g key={name}>
+              <rect x={x} y={320} width={150} height={54} rx={10} className={styles.box} />
+              <text x={x + 75} y={343} className={styles.boxName}>{name}</text>
+              <text x={x + 75} y={361} className={styles.boxSub}>A2A :{port} · no tools</text>
+            </g>
+          );
+        })}
 
-      <rect x={30} y={176} width={140} height={44} rx={10} className={styles.box} />
-      <text x={100} y={195} className={styles.boxName}>Guardrails</text>
-      <text x={100} y={211} className={styles.boxSub}>in-process, no LLM</text>
+        <rect x={290} y={170} width={180} height={56} rx={12} className={styles.hub} />
+        <text x={380} y={194} className={styles.hubName}>Incident Manager</text>
+        <text x={380} y={212} className={styles.boxSub}>orchestrator</text>
 
-      <rect x={590} y={176} width={140} height={44} rx={10} className={styles.box} />
-      <text x={660} y={195} className={styles.boxName}>Event store</text>
-      <text x={660} y={211} className={styles.boxSub}>backend · dashboard</text>
+        <rect x={30} y={176} width={140} height={44} rx={10} className={styles.box} />
+        <text x={100} y={195} className={styles.boxName}>Guardrails</text>
+        <text x={100} y={211} className={styles.boxSub}>in-process, no LLM</text>
 
-      <g>
+        <rect x={590} y={176} width={140} height={44} rx={10} className={styles.box} />
+        <text x={660} y={195} className={styles.boxName}>Event store</text>
+        <text x={660} y={211} className={styles.boxSub}>backend · dashboard</text>
+
         <rect x={290} y={110} width={180} height={22} rx={11} className={styles.pill} />
         <text x={380} y={125} className={styles.pillText}>parallel fan-out</text>
         <rect x={290} y={268} width={180} height={22} rx={11} className={styles.pill} />
         <text x={380} y={283} className={styles.pillText}>sequential calls</text>
         <text x={530} y={190} className={styles.edgeLabel}>events</text>
       </g>
+
+      {/* ---- the safety path: guardrails -> human -> (approved fix) -> the shop ---- */}
+      <line x1={100} y1={320} x2={100} y2={346} stroke={line} strokeWidth={1.5} />
+      <text x={150} y={338} className={styles.edgeLabel}>approve / reject</text>
+      <rect x={30} y={348} width={140} height={44} rx={10} className={styles.box} />
+      <text x={100} y={367} className={styles.boxName}>Human approval</text>
+      <text x={100} y={383} className={styles.boxSub}>dashboard · backend</text>
+      <path d="M30,298 L12,298 L12,39 L278,39" fill="none" stroke={quiet} strokeWidth={1.5} strokeDasharray="5 5" markerEnd="url(#arch-arrow-quiet)" />
+      <text x={26} y={170} className={styles.edgeLabel} transform="rotate(-90 26 170)">runs the approved fix, nothing else</text>
+
+      {/* ---- the evidence loop: Critic -> manager -> specialists, up to 3 rounds ---- */}
+      <path d="M380,474 L380,510 L752,510 L752,153 L712,153" fill="none" stroke={brand} strokeWidth={1.5} strokeDasharray="2 5" markerEnd="url(#arch-arrow)" />
+      <text x={768} y={330} className={styles.edgeLabel} transform="rotate(90 768 330)">evidence loop, via the manager · max 3 rounds</text>
+
+      <text x={570} y={492} className={styles.edgeLabel}>runs only after the Critic approves</text>
     </svg>
   );
 }
@@ -157,8 +194,9 @@ export function ArchitectureSection() {
         >
           <Diagram />
           <p className={styles.note}>
-            Drawn from the code in <code>orchestrator/</code> and <code>agents/common/ports.py</code>. It shows the
-            architecture, not a recorded run. Every line marked A2A is a real network call between processes.
+            Drawn from the code in <code>orchestrator/</code>, <code>guardrails/</code> and <code>agents/common/ports.py</code>. It shows the
+            architecture, not a recorded run. Every line marked A2A is a real network call between processes. Solid lines are calls,
+            the red dashed lines are the parallel fan-out and the evidence loop, and the grey dashed line is the only path that changes the shop.
           </p>
         </motion.div>
 

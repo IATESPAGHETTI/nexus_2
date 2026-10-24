@@ -53,5 +53,10 @@ def clear() -> dict:
     return _post("/admin/fault/clear")
 
 
+def reset() -> dict:
+    """Clears faults and all accumulated evidence (see production /admin/reset)."""
+    return _post("/admin/reset")
+
+
 def current_state() -> dict:
     return _get("/admin/state")
