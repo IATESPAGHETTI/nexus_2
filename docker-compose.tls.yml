@@ -1,0 +1,17 @@
+# HTTPS in front of the dashboard with automatic Let's Encrypt certificates (Caddy).
+#   DOMAIN=nexus-yourname.centralindia.cloudapp.azure.com docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --build
+# Ports 80 and 443 must be open in the VM's network rules. Set DASHBOARD_BIND=127.0.0.1 in .env so the plain-HTTP
+# dashboard port is not reachable from outside.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    command: caddy reverse-proxy --from ${DOMAIN:?set DOMAIN to the public host name} --to dashboard:80
+    volumes:
+      - caddy-data:/data
+    depends_on:
+      - dashboard
+
+volumes:
+  caddy-data:

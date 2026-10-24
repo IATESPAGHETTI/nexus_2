@@ -180,6 +180,11 @@ export interface IncidentState {
 // docs/PROJECT_STATE.md Phase 8 "renamed to match root CLAUDE.md exactly").
 export type NexusEventType =
   | "INCIDENT_CREATED"
+  | "INPUT_REJECTED"
+  | "HANDOFF"
+  | "AGENT_MONITOR"
+  | "BOARD_ENTRY"
+  | "EVIDENCE_PARSE_WARNING"
   | "INCIDENT_STATUS_CHANGED"
   | "AGENT_STARTED"
   | "AGENT_COMPLETED"

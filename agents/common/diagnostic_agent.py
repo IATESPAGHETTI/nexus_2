@@ -28,8 +28,17 @@ from google.adk.runners import InMemoryRunner
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 from google.genai import types
 
+from callbacks import AgentMonitor
+from guard_callbacks import AgentGuard, guardrails_enabled, merge_callbacks
+from prompt_variants import apply_variant
 from finding import build_finding, make_evidence_item, now_iso
-from mcp_connection import mcp_server_connection_params
+from mcp_connection import (
+    ANALYSIS_INSTRUCTION,
+    WEB_SEARCH_INSTRUCTION,
+    analysis_server_connection_params,
+    analysis_tools_for,
+    mcp_server_connection_params,
+)
 from usage_tally import UsageTally
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -66,28 +75,61 @@ class DiagnosticAgent:
         description: str = "",
     ):
         self.agent_name = agent_name
-        self.instruction = instruction + DEFAULT_INSTRUCTION_SUFFIX
+        self.instruction = apply_variant(instruction + DEFAULT_INSTRUCTION_SUFFIX, agent_name)
         self.allowed_tools = allowed_tools
         self.default_question = default_question
         self.description = description
 
-    def build_adk_agent(self) -> Agent:
-        toolset = McpToolset(
-            connection_params=mcp_server_connection_params(),
-            tool_filter=self.allowed_tools,
-        )
+    @staticmethod
+    def _callbacks(monitor: AgentMonitor | None) -> dict:
+        """Monitor first (observe-only), then the security guard (may modify/block)."""
+        if monitor is None:
+            return {}
+        parts = [monitor.callbacks()]
+        if guardrails_enabled():
+            guard = AgentGuard(monitor, check_abuse=True)
+            monitor.guard = guard
+            parts.append(guard.callbacks())
+        return merge_callbacks(*parts)
+
+    def _tool_names(self) -> list[str]:
+        return [*self.allowed_tools, *analysis_tools_for(self.agent_name)]
+
+    def build_adk_agent(self, monitor: AgentMonitor | None = None) -> Agent:
+        toolsets = [
+            McpToolset(
+                connection_params=mcp_server_connection_params(),
+                tool_filter=self.allowed_tools,
+            )
+        ]
+        extra = analysis_tools_for(self.agent_name)
+        if extra:  # NEXUS_ENABLE_ANALYSIS_TOOLS=1: a second, independent MCP server
+            toolsets.append(McpToolset(connection_params=analysis_server_connection_params(), tool_filter=extra))
         provider, _ = resolve_runtime_config()
         model_kwargs = {"include_reasoning": False} if provider == "groq" else {}
         return Agent(
             name=self.agent_name,
             description=self.description,
             model=LiteLlm(model=litellm_model_name(), **model_kwargs),
-            instruction=self.instruction,
-            tools=[toolset],
+            instruction=self.instruction + self._extra_tool_instruction(extra),
+            tools=toolsets,
+            **self._callbacks(monitor),
         )
 
+    @staticmethod
+    def _extra_tool_instruction(extra: list[str]) -> str:
+        """Describe only the extra tools this agent actually has (the two switches are independent)."""
+        if not extra:
+            return ""
+        if any(tool != "web_search" for tool in extra):
+            text = ANALYSIS_INSTRUCTION
+        else:
+            text = "\n\nEXTRA TOOLS from a second tool server (use them only when they help):"
+        return text + (WEB_SEARCH_INSTRUCTION if "web_search" in extra else "")
+
     async def investigate(self, question: str) -> dict:
-        agent = self.build_adk_agent()
+        monitor = AgentMonitor(self.agent_name)
+        agent = self.build_adk_agent(monitor)
         runner = InMemoryRunner(agent=agent, app_name=f"nexus_{self.agent_name}")
         session = await runner.session_service.create_session(
             app_name=f"nexus_{self.agent_name}", user_id="nexus"
@@ -112,12 +154,12 @@ class DiagnosticAgent:
                     continue
                 for part in event.content.parts:
                     call = getattr(part, "function_call", None)
-                    if call and call.name in self.allowed_tools:
+                    if call and call.name in self._tool_names():
                         key = call.id or call.name
                         pending_calls[key] = {"tool": call.name, "arguments": dict(call.args or {})}
 
                     response = getattr(part, "function_response", None)
-                    if response and response.name in self.allowed_tools:
+                    if response and response.name in self._tool_names():
                         key = response.id or response.name
                         call_info = pending_calls.pop(key, {"tool": response.name, "arguments": {}})
                         raw = response.response
@@ -160,4 +202,6 @@ class DiagnosticAgent:
         # Real model usage for this task; the orchestrator pops it off before the
         # Finding is stored or shown to other agents (orchestrator/budget.py).
         finding["usage"] = usage.as_dict()
+        # Callback trace; the orchestrator pops it and stores it as an AGENT_MONITOR event.
+        finding["monitoring"] = monitor.summary()
         return finding

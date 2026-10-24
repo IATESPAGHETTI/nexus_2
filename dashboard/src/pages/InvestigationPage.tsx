@@ -10,6 +10,7 @@ import { CriticChallengePanel } from "../components/investigation/CriticChalleng
 import { ReEvaluationLoopIndicator } from "../components/investigation/ReEvaluationLoopIndicator";
 import { DecisionPanel } from "../components/investigation/DecisionPanel";
 import { UsagePanel } from "../components/investigation/UsagePanel";
+import { AuditPanel, type AuditIncident } from "../components/investigation/AuditPanel";
 import { RecoveryPanel } from "../components/investigation/RecoveryPanel";
 import { IncidentHumanCard } from "../components/command_center/IncidentHumanCard";
 import { buildCommandCenterModel } from "../lib/presentation";
@@ -109,6 +110,7 @@ export function InvestigationPage() {
           <A2AStreamPanel rows={a2aRows(events)} />
           <MCPActivityPanel rows={mcpRows(events, evidenceLookup)} />
           <UsagePanel usage={incident.token_usage} />
+          <AuditPanel incident={incident as unknown as AuditIncident} />
         </div>
       </div>
     </div>

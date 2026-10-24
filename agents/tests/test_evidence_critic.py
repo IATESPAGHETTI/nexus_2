@@ -166,3 +166,13 @@ def test_build_critique_coerces_non_list_fields_to_empty_lists():
     critique = build_critique(SAMPLE_HYPOTHESIS, SAMPLE_EVIDENCE_POOL, raw)
     assert critique["contradictions"] == []
     assert critique["verdict"] == "CONTRADICTED"
+
+
+def test_build_hypotheses_accepts_wrapped_and_bare_shapes_but_not_garbage():
+    from agent import build_hypotheses  # noqa: E402  (agents/evidence/agent.py, on sys.path in this module)
+    item = {"statement": "slow queries", "confidence": 0.7, "supporting_evidence_ids": []}
+    assert len(build_hypotheses({}, [item])) == 1
+    assert len(build_hypotheses({}, {"hypotheses": [item]})) == 1      # wrapped in an object
+    assert len(build_hypotheses({}, item)) == 1                         # one bare object
+    assert build_hypotheses({}, {"note": "no list here"}) == []
+    assert build_hypotheses({}, "just prose") == [] and build_hypotheses({}, None) == []

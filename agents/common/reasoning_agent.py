@@ -24,6 +24,10 @@ from google.adk.models.lite_llm import LiteLlm
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 
+from callbacks import AgentMonitor
+from prompt_variants import apply_variant
+from guard_callbacks import AgentGuard, guardrails_enabled, merge_callbacks
+from json_extract import extract_json  # noqa: F401  (re-exported: other modules import it from here)
 from usage_tally import UsageTally
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -36,38 +40,6 @@ from runtime_config import litellm_model_name, resolve_runtime_config  # noqa: E
 # Same real Groq free-tier TPM constraint as agents/common/diagnostic_agent.py.
 litellm.num_retries = 5
 
-_FENCED_JSON_RE = re.compile(r"```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```", re.DOTALL | re.IGNORECASE)
-
-
-def extract_json(text: str):
-    """Best-effort structured extraction from a model's free-form reply.
-
-    Tries a fenced ```json block first, then the raw stripped text, then the
-    largest top-level {...}/[...] span in the text. Returns None (never raises)
-    if nothing in the text parses as JSON -- callers must treat that as "the
-    model gave no usable structured output" and fail safe, not guess.
-    """
-    if not text:
-        return None
-    candidates: list[str] = []
-    fenced = _FENCED_JSON_RE.search(text)
-    if fenced:
-        candidates.append(fenced.group(1))
-    stripped = text.strip()
-    candidates.append(stripped)
-    first = min((i for i in (stripped.find("{"), stripped.find("[")) if i != -1), default=-1)
-    if first != -1:
-        last = max(stripped.rfind("}"), stripped.rfind("]"))
-        if last > first:
-            candidates.append(stripped[first : last + 1])
-    for candidate in candidates:
-        try:
-            return json.loads(candidate)
-        except (json.JSONDecodeError, TypeError):
-            continue
-    return None
-
-
 class ReasoningAgent:
     """An ADK LlmAgent with no tools: reasons purely over the JSON it is given
     as input and is instructed to reply with structured JSON output. Exposes
@@ -78,11 +50,23 @@ class ReasoningAgent:
 
     def __init__(self, agent_name: str, instruction: str, default_question: str, description: str = ""):
         self.agent_name = agent_name
-        self.instruction = instruction
+        self.instruction = apply_variant(instruction, agent_name)
         self.default_question = default_question
         self.description = description
 
-    def build_adk_agent(self) -> Agent:
+    @staticmethod
+    def _callbacks(monitor: AgentMonitor | None, check_abuse: bool = False) -> dict:
+        """Monitor first (observe-only), then the security guard (may modify/block)."""
+        if monitor is None:
+            return {}
+        parts = [monitor.callbacks()]
+        if guardrails_enabled():
+            guard = AgentGuard(monitor, check_abuse=check_abuse)
+            monitor.guard = guard
+            parts.append(guard.callbacks())
+        return merge_callbacks(*parts)
+
+    def build_adk_agent(self, monitor: AgentMonitor | None = None) -> Agent:
         provider, _ = resolve_runtime_config()
         model_kwargs = {"include_reasoning": False} if provider == "groq" else {}
         return Agent(
@@ -91,10 +75,12 @@ class ReasoningAgent:
             model=LiteLlm(model=litellm_model_name(), **model_kwargs),
             instruction=self.instruction,
             tools=[],
+            **self._callbacks(monitor, check_abuse=False),
         )
 
     async def investigate(self, question: str) -> dict:
-        agent = self.build_adk_agent()
+        monitor = AgentMonitor(self.agent_name)
+        agent = self.build_adk_agent(monitor)
         runner = InMemoryRunner(agent=agent, app_name=f"nexus_{self.agent_name}")
         session = await runner.session_service.create_session(
             app_name=f"nexus_{self.agent_name}", user_id="nexus"
@@ -114,4 +100,4 @@ class ReasoningAgent:
                 if text:
                     final_text += text
 
-        return {"raw_text": final_text, "parsed": extract_json(final_text), "usage": usage.as_dict()}
+        return {"raw_text": final_text, "parsed": extract_json(final_text), "usage": usage.as_dict(), "monitoring": monitor.summary()}

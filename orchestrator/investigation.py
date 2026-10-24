@@ -36,6 +36,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import event_bridge  # noqa: E402
 import recovery  # noqa: E402
@@ -43,6 +44,11 @@ from budget import IncidentBudget  # noqa: E402
 from incident_manager import DIAGNOSTIC_AGENTS, investigate_incident  # noqa: E402
 import triage  # noqa: E402
 from remote_call import call_remote_agent  # noqa: E402
+import blackboard  # noqa: E402
+from nexus_guard import screen_user_text  # noqa: E402
+import nexus_otlp  # noqa: E402
+import nexus_trace  # noqa: E402
+from nexus_models import build_incident_report  # noqa: E402
 
 MAX_REEVALUATION_LOOPS = int(os.environ.get("MAX_REEVALUATION_LOOPS", "3"))
 
@@ -52,6 +58,31 @@ CRITIC_AGENT_NAME = "root_cause_critic"
 CRITIC_AGENT_DESCRIPTION = "NEXUS Root-Cause Critic: independently challenges the leading Hypothesis."
 
 _OPEN_STATUSES = ("PROPOSED", "UNDER_REVIEW", "NEEDS_EVIDENCE")
+
+
+def attach_report(incident_id: str) -> dict:
+    """Builds the final Pydantic IncidentReport from the stored incident and saves
+    it (JSON + Markdown) on the incident. Never raises: a reporting problem must
+    not change the investigation outcome."""
+    try:
+        incident = event_bridge.get_incident(incident_id)
+        report = build_incident_report(incident)
+        events = event_bridge.get_events(incident_id)
+        trace = nexus_trace.build_trace(incident, events)
+        event_bridge.update_state(
+            incident_id,
+            report={**report.model_dump(), "markdown": report.to_markdown()},
+            trace=trace,
+            lineage=nexus_trace.build_lineage(incident, events),
+        )
+        if nexus_otlp.endpoint():   # optional: send the trace to Jaeger / an OpenTelemetry collector
+            outcome = nexus_otlp.export(trace, incident)
+            event_bridge.emit_event(incident_id, "TRACE_EXPORTED", source="orchestrator",
+                                    status="ok" if outcome.get("exported") else "failed", payload=outcome)
+        return event_bridge.get_incident(incident_id)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[nexus] could not build incident report: {type(exc).__name__}", file=sys.stderr)
+        return event_bridge.get_incident(incident_id)
 
 
 def _flatten_evidence(findings_by_agent: dict) -> list[dict]:
@@ -127,13 +158,24 @@ async def _dispatch_diagnostic_agents(
     for name in agent_names:
         event_bridge.emit_event(incident_id, "AGENT_STARTED", source="incident_manager", target=name)
 
-    result = await investigate_incident(question, agent_names=agent_names)
+    if blackboard.pipeline():
+        result = await blackboard.pipeline_investigate(incident_id, question, agent_names, DIAGNOSTIC_AGENTS)
+        if result.get("handoff_from"):
+            event_bridge.emit_event(
+                incident_id, "HANDOFF", source=result["handoff_from"], target="downstream_specialists",
+                payload={"stage_two": [n for n in agent_names if n != result["handoff_from"]]},
+            )
+    elif blackboard.enabled():
+        result = await blackboard.board_investigate(incident_id, question, agent_names, DIAGNOSTIC_AGENTS)
+    else:
+        result = await investigate_incident(question, agent_names=agent_names)
 
     for name in result["agents_responded"]:
         finding = result["findings"][name]
         # Usage is bookkeeping, not evidence: take it off the Finding so it is
         # neither stored as agent_findings nor sent on to the Evidence Agent.
         budget.record(name, finding.pop("usage", None))
+        event_bridge.emit_monitor(incident_id, name, finding.pop("monitoring", None))
         a2a_meta = result["a2a"].get(name, {})
         event_bridge.emit_event(
             incident_id,
@@ -193,7 +235,10 @@ async def _dispatch_diagnostic_agents(
 async def _call_evidence_agent(
     incident_id: str, findings_by_agent: dict, budget: IncidentBudget, previous: list[dict] | None = None
 ) -> list[dict]:
-    call = await call_remote_agent(EVIDENCE_AGENT_NAME, EVIDENCE_AGENT_DESCRIPTION, json.dumps(findings_by_agent))
+    if blackboard.enabled():
+        call = await blackboard.board_synthesize(incident_id, EVIDENCE_AGENT_NAME, EVIDENCE_AGENT_DESCRIPTION)
+    else:
+        call = await call_remote_agent(EVIDENCE_AGENT_NAME, EVIDENCE_AGENT_DESCRIPTION, json.dumps(findings_by_agent))
     event_bridge.emit_event(
         incident_id,
         "A2A_MESSAGE_SENT",
@@ -204,7 +249,10 @@ async def _call_evidence_agent(
     )
     response = call["response"] if isinstance(call["response"], dict) else {}
     budget.record(EVIDENCE_AGENT_NAME, response.pop("usage", None))
+    event_bridge.emit_monitor(incident_id, EVIDENCE_AGENT_NAME, response.pop("monitoring", None))
     _persist_usage(incident_id, budget)
+    if response.get("parse_warning"):
+        event_bridge.emit_event(incident_id, "EVIDENCE_PARSE_WARNING", source=EVIDENCE_AGENT_NAME, payload={"warning": response["parse_warning"]})
     hypotheses = response.get("hypotheses", [])
     if not isinstance(hypotheses, list):
         hypotheses = []
@@ -216,7 +264,10 @@ async def _call_evidence_agent(
 
 async def _call_critic(incident_id: str, hypothesis: dict, evidence_pool: list[dict], budget: IncidentBudget) -> dict:
     payload = {"hypothesis": hypothesis, "evidence_pool": evidence_pool}
-    call = await call_remote_agent(CRITIC_AGENT_NAME, CRITIC_AGENT_DESCRIPTION, json.dumps(payload))
+    if blackboard.enabled():
+        call = await blackboard.board_review(incident_id, CRITIC_AGENT_NAME, CRITIC_AGENT_DESCRIPTION, hypothesis)
+    else:
+        call = await call_remote_agent(CRITIC_AGENT_NAME, CRITIC_AGENT_DESCRIPTION, json.dumps(payload))
     event_bridge.emit_event(
         incident_id,
         "A2A_MESSAGE_SENT",
@@ -227,6 +278,7 @@ async def _call_critic(incident_id: str, hypothesis: dict, evidence_pool: list[d
     )
     critique = call["response"] if isinstance(call["response"], dict) else None
     budget.record(CRITIC_AGENT_NAME, critique.pop("usage", None) if critique else None)
+    event_bridge.emit_monitor(incident_id, CRITIC_AGENT_NAME, critique.pop("monitoring", None) if critique else None)
     _persist_usage(incident_id, budget)
     if not critique:
         critique = {
@@ -278,8 +330,40 @@ async def run_investigation(
     budget = budget or IncidentBudget.from_env()
 
     incident_id = incident_id or event_bridge.create_incident(incident_description)
+    trace = nexus_trace.start_trace()  # one W3C trace id for this whole investigation
+    event_bridge.update_state(incident_id, trace_id=trace.trace_id, root_span_id=trace.span_id)
     event_bridge.emit_event(
         incident_id, "INCIDENT_CREATED", source="incident_manager", payload={"description": incident_description}
+    )
+
+    # Input guardrail (course requirement 8): abusive or prompt-injecting text never reaches a model.
+    if os.environ.get("NEXUS_GUARDRAILS", "1") != "0":
+        screening = screen_user_text(incident_description)
+        if not screening.allowed:
+            reason = screening.reason
+            event_bridge.emit_event(
+                incident_id, "INPUT_REJECTED", source="input_guardrail", status="blocked", payload=screening.as_dict()
+            )
+            event_bridge.update_state(
+                incident_id,
+                status="ABSTAINED",
+                decision={"outcome": "ABSTAINED", "reason": reason, "loops_used": 0, "max_loops": max_loops},
+            )
+            return attach_report(incident_id)
+
+    # Run configuration, stored so every result states which variant produced it.
+    event_bridge.update_state(
+        incident_id,
+        run_config={
+            "prompt_variant": os.environ.get("NEXUS_PROMPT_VARIANT", "default"),
+            "guardrails": os.environ.get("NEXUS_GUARDRAILS", "1") != "0",
+            "critic_framework": os.environ.get("NEXUS_CRITIC_FRAMEWORK", "adk"),
+            "evidence_framework": os.environ.get("NEXUS_EVIDENCE_FRAMEWORK", "adk"),
+            "topology": blackboard.topology(),
+            "triage": use_triage,
+            "skip_critic": skip_critic,
+            "llm": os.environ.get("NEXUS_LLM_PROVIDER", "deepseek"),
+        },
     )
 
     if use_triage:
@@ -435,6 +519,7 @@ async def run_investigation(
         token_usage=budget.snapshot(),
     )
     event_bridge.emit_event(incident_id, "INCIDENT_STATUS_CHANGED", source="incident_manager", payload={"status": decision})
+    attach_report(incident_id)  # available while a human decides; rebuilt after recovery below
 
     if decision == "DIAGNOSED" and trigger_recovery:
         stop = budget.exceeded()
@@ -444,7 +529,7 @@ async def run_investigation(
             event_bridge.update_state(
                 incident_id, decision={**decision_record, "reason": f"{reason}; recovery not started: {stop}"}
             )
-            return event_bridge.get_incident(incident_id)
+            return attach_report(incident_id)
         # Phase 8: bounded recovery flow (propose -> validate -> human
         # approval -> execute -> verify). Never runs for ABSTAINED -- there
         # is nothing diagnosed to recover from. `leading`/critic_results[-1]
@@ -453,4 +538,4 @@ async def run_investigation(
             incident_id, leading, critic_results[-1] if critic_results else {}, evidence_pool=_flatten_evidence(findings_by_agent)
         )
 
-    return event_bridge.get_incident(incident_id)
+    return attach_report(incident_id)

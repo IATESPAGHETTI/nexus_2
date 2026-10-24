@@ -13,7 +13,14 @@ from __future__ import annotations
 import re
 import time
 import uuid
+import sys
+from pathlib import Path
 from typing import Any
+
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+from nexus_models import Finding, validated  # noqa: E402
 
 # Tolerates markdown emphasis around the marker (observed in real model output,
 # e.g. "**CONFIDENCE:** 0.68") in addition to the plain "CONFIDENCE: 0.68" form.
@@ -91,7 +98,7 @@ def build_finding(
     if any(isinstance(e["result"], dict) and e["result"].get("ok") is False for e in evidence):
         limitations.append("at least one MCP tool call returned ok=False")
 
-    return {
+    finding = {
         "finding_id": new_finding_id(),
         "agent": agent_name,
         "observation": _summarize_evidence(evidence),
@@ -102,3 +109,4 @@ def build_finding(
         "confidence": confidence,
         "limitations": "; ".join(limitations) if limitations else "none noted",
     }
+    return validated(Finding, finding)  # Pydantic contract check (nexus_models.py)

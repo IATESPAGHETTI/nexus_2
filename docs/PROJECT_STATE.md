@@ -1,5 +1,193 @@
 # NEXUS Project State
 
+## Course minimum-requirements review (2026-10-15)
+- Gap analysis of the 11 course requirements: `docs/REVIEW_GAP_ANALYSIS.md` (review only, no code changed, nothing run).
+- Result: MCP tools met; CrewAI (req. 7) and cloud deployment (req. 11) not started; blackboard, Pydantic models,
+  ADK callbacks, input guardrails, prompt variants, tracing and repeated-run cost evaluation are partial or missing.
+- Next action: CrewAI Critic spike over A2A (req. 6/7), then input guardrails + prompt variants.
+
+## Gemini key rotation in the experiment runner (2026-10-18) — implemented + tested with fake keys; NOT yet used live
+- `evaluation/run_matrix.py::KeyRing`: when the provider is Gemini and `GEMINI_API_KEY_2` (and `_3`) exist in `.env`, three empty runs in a row switch to the next key, restart the agents
+  on it (they read the key at start-up) and REDO the empty runs; empty runs that were not redone are recorded as invalid. Key values are never printed. Owner's decision (college project);
+  Google's free-tier terms may restrict using several projects to get around quotas, so this is the owner's risk. Results must still name one model and one provider.
+
+## Held-out run, PARTIAL (2026-10-18) — see docs/EVALUATION_RESULTS_HOLDOUT.md
+- 52 valid runs, 5 arms, Gemini `gemini-3.5-flash-lite`. Free tier = 15 requests/min AND 500/day/model: the run hit the daily cap; 13 empty runs removed (raw kept).
+  Runner now also treats zero-token runs as invalid and stops after 3 in a row. `hub_analysis_tools` and `hub_crewai_both` were not run yet; resume command in the results file.
+- Partial finding (n=1-2 per cell, NOT significant): baseline 11/11; multi-agent arms 56-70%. The healthy control looked like a failure for all multi-agent arms; that was a SCORER bug (hypotheses said "operating normally" and were read as a database fault). Fixed (`healthy` class), all stored runs re-scored: control 100%. The DeepSeek 144-run set was re-scored too (only hub_persona_sre false diagnoses 13% -> 7%).
+
+## Held-out scenarios + rate-limit-aware runner (2026-10-18) — implemented + tested; NOT yet run
+- `fault_injection/scenarios.py::HOLDOUT_SCENARIOS` (8) + `HOLDOUT_CONTROLS` (1): the five faults described in NEW customer wording, and three TWO-FAULT combinations
+  (db+dependency, deploy+db, resource+dependency; the shop's fault flags are independent, verified live). Truth `"a|b"` accepts either injected cause
+  (`scoring.score_run`). `injector.inject` posts every fault of a scenario. Symptoms are tested to be new and not to name causes.
+- Rule: run them with prompts, triage rules and scorer FROZEN and record the commit; they exist because the core five were tuned on. `run_matrix.py --set core|holdout|all`.
+- Runner now detects runs whose agents reported errors (e.g. provider 429s), retries after a pause (`--retries`, `--retry-wait`), and marks still-failing runs `invalid`:
+  excluded from accuracy and shown as "Runs (invalid)". Without this a rate-limited run would look like an abstention.
+- Provider rule: any results must say which model produced them; do not mix providers in one table.
+
+## A2A interoperability limit found (2026-10-18)
+- ADK 2.9.1 agents publish A2A 1.0 style agent cards (`supportedInterfaces`). The CrewAI environment's `a2a-sdk` 0.3.26 client cannot parse them (`url` field required), so
+  a CrewAI agent cannot call an ADK agent directly with the versions CrewAI 1.15.28 pins. ADK -> CrewAI works (ADK's client reads both card formats; verified live and in tests).
+- Consequence: the planned "CrewAI critic asks an ADK specialist directly" (peer-to-peer) was NOT built. Workarounds (a second legacy card on the ADK side, or a hand-written
+  JSON-RPC client) were rejected: they would re-implement the protocol instead of using the SDK. A2A is bidirectional only in the sense that both frameworks serve and are called over A2A.
+
+## OpenTelemetry export + trace timing + light incident view (2026-10-18)
+- `nexus_otlp.py`: converts the stored span tree to OTLP/HTTP JSON (one service per agent + `nexus-orchestrator`, real trace id, parent links, error status) and POSTs it to
+  `NEXUS_OTLP_ENDPOINT` after each investigation (`TRACE_EXPORTED` event, fail-soft). Plain JSON over HTTP, so no OpenTelemetry SDK (its pins conflict with the ADK stack).
+  Tested against a throwaway local collector (`tests/test_nexus_otlp.py`, 6 tests). Verified in real Jaeger 1.62 (2026-10-19): a stored 21-span investigation trace (hub_crewai_both) was exported and read back from Jaeger's API under its own trace id, 5 services. `NEXUS_OTLP_ENDPOINT` is the FULL URL, e.g. `http://jaeger:4318/v1/traces`.
+- Trace timing: agents now record their own wall-clock start/end (`started_unix`/`finished_unix` in `AgentMonitor.summary`), so spans are placed correctly even in the
+  pipeline (before, every agent was placed at the time its trace event was written). Older incidents fall back to event time minus duration. Times are good to ~1 s at the root.
+- Dashboard: the incident ("Mission Control" detail) view was a black shell on a light site (user complaint: "it sucks, it's just black"); it now uses the light theme
+  (`.nx-light` token overrides in `styles/global.css`, light header and body). Checked in the browser: no dark blocks, no white-on-white text.
+- Dashboard timeline (Audit panel): one bar per agent placed by its real clock. Live pipeline run (Gemini): Metrics 3.5-7.6 s, then Logs and Database both start at 7.9 s, then Evidence 14.2 s, Critic 16.7 s.
+- Note: the backend can only stop agents it started itself; after changing agent code, stop them by port (8101-8107) or they keep running the old code.
+
+## Pipeline topology + board view (2026-10-18) — implemented + tested; verified live on Gemini (NOT yet measured against hub/blackboard)
+- `NEXUS_TOPOLOGY=pipeline` (third topology): the Metrics agent runs FIRST and alone (where/when); the other selected specialists then run in parallel over the shared
+  board, each told what Metrics found (`HANDOFF from the metrics_agent ...`, built from its own interpretation, bounded to 900 chars and passed through the injection
+  redactor because it is model output travelling to another model). `HANDOFF` event; falls back to the plain blackboard without Metrics or with one agent.
+- Tests: `orchestrator/tests/test_pipeline.py` (5, board transport mocked). Live (Gemini, db_slowdown): bb-3 metrics finding -> bb-4 hand-off request -> bb-5/6 database + logs findings,
+  DIAGNOSED in 16 s, 12 calls, 48k tokens.
+- Dashboard: the Audit panel narrates every board entry (description, who was asked, finding + confidence, hand-off, hypotheses, verdict).
+- New matrix arms ready (not run): `pipeline`, `hub_analysis_tools`, `hub_crewai_both`.
+- Dashboard nav link renamed Overview -> Mission Control (user could not find "Mission Control" on the main page).
+
+## Second MCP server (2026-10-18) — implemented + tested; verified live on Gemini
+- `mcp/analysis_server.py`: runbook file parser, safe calculator, latency step-change statistics tool (9 MCP tools across 2 independent servers). Tests: 32 unit + 2 real-protocol.
+- Behind `NEXUS_ENABLE_ANALYSIS_TOOLS=1` (default OFF so the measured baseline is unchanged). Live (Gemini, db_slowdown): Metrics agent called `detect_latency_step`
+  (35 requests, step found) and `evaluate_expression`; DIAGNOSED in 12 s, 12 calls, 39.5k tokens. The runbook tool was not used in that run.
+- Not measured: whether these tools change accuracy; they need their own matrix arm (week 4).
+
+## CrewAI: Crew/Task, callbacks, second agent (2026-10-18) — implemented + tested; verified live on Gemini
+- The CrewAI Critic and a NEW CrewAI Evidence Agent now use real `Agent` + `Task` + `Crew` (`crewai_critic/crewai_common.py`), with `step_callback` /
+  `task_callback` writing into the same `AgentMonitor` as the ADK callbacks and token usage measured from `Crew.token_usage` (the earlier "0 tokens for the CrewAI
+  critic" gap is closed). Provider-aware (deepseek | gemini | groq). Evidence logic split into ADK-free `agents/evidence/evidence_core.py` (shared contract).
+- Select with `NEXUS_EVIDENCE_FRAMEWORK=crewai` / `NEXUS_CRITIC_FRAMEWORK=crewai` (backend launcher, experiment stack, compose `--profile crewai`); `run_config` records both.
+- Tests: crewai_critic 8, orchestrator ADK->CrewAI over A2A for critic AND evidence (stub, trace id propagated). Live: ADK specialists + CrewAI evidence + CrewAI critic -> DIAGNOSED in 20 s.
+- Limit: CrewAI `step_callback` only fires on tool steps; these agents use no tools.
+
+## Report tables + download (2026-10-18) — implemented + tested; verified live on Gemini
+- `IncidentReport` now carries a Summary TABLE (14 rows: symptom, outcome, root cause, confidence, critic verdict, loops, agents, evidence count,
+  calls/tokens, duration, topology/prompt/critic, recovery, approval), a Hypotheses table and an Agents table, plus `trace_id`, `duration_seconds`.
+- `GET /incidents/{id}/report?format=md|json` (backend), a Download button + tables in the dashboard's Audit panel.
+- Decision: agents keep validating their output against Pydantic models after parsing; ADK `output_schema` was NOT adopted because structured-output
+  support differs across DeepSeek/Gemini/Groq and would change behaviour for every provider.
+- Found: the CrewAI critic reports 0 tokens (CrewAI `usage_metrics` is empty), so CrewAI-arm cost is under-reported. To fix in the CrewAI step.
+
+## Guard hardening + red-team suite (2026-10-18) — implemented + tested (0 tokens)
+- `nexus_guard.py` now normalises text before matching (NFKC, zero-width, look-alike letters, leetspeak, split letters, URL/HTML/hex/base64/rot13) and
+  matches a categorised catalogue (override, leak, role, delimiter, tool_hijack, exfil) in English plus 8 other languages; abuse list extended
+  (plurals, romanised Hindi/Spanish/French/German).
+- `tests/redteam_corpus.py` + `tests/test_redteam.py` (209 checks) + `docs/REDTEAM_RESULTS.md`. HONEST NUMBERS: first pass on 30 unseen attacks = 21/30 (70%);
+  after generalising 30/30 but no longer independent; the 14 "hard" paraphrases are all missed by design; 0 false positives on 79 benign texts.
+- Still heuristic, not a proof of safety.
+
+## Gemini free-tier test (2026-10-18) — one live investigation, NOT a benchmark
+- Purpose: avoid DeepSeek spend while developing. `NEXUS_LLM_PROVIDER=gemini` works end to end through ADK + LiteLLM (tool calling over MCP, A2A, critic).
+- `gemini-2.5-flash` (the old default) returns 404 for new accounts; the key can use `gemini-3.x` models. `gemini-3.8-flash` is a thinking model limited
+  to 5 requests/min on the free tier: the first investigation abstained because agents hit HTTP 429 after LiteLLM's retries. `gemini-3.5-flash-lite` (and
+  `gemini-3.1-flash-lite`) took 14 rapid calls without limiting. Default changed to `gemini-3.5-flash-lite`.
+- Result on `gemini-3.5-flash-lite` (db_slowdown, hub, ADK critic): DIAGNOSED in ~20 s, 10 model calls, 31.4k tokens, 6 agents, no errors, recovery plan pending
+  approval (not clicked). Cost $0 (free tier). One run only: it says the pipeline works with this provider, not that accuracy is comparable to DeepSeek.
+- Rules: results must name the provider/model; do not mix providers in one comparison; free-tier prompts may be used by Google for training (nothing sensitive is sent);
+  daily quotas were not measured.
+
+## Azure deployment + experiment matrix results (2026-10-16)
+- **Azure for Students VM is LIVE**: `Standard_B2as_v2` (2 vCPU, 8 GB) in Central India, Docker Compose full stack + Caddy HTTPS
+  (`deploy/AZURE.md`, `docker-compose.tls.yml`). Verified on the VM: all 5 images built on Linux, 12 containers up (backend, orchestrator,
+  shop healthy), `/demo/status` = 7 of 7 agents reachable over the Docker network, dashboard reachable over HTTPS behind basic auth.
+  NOT yet verified there: a full investigation through the cloud dashboard, Approve -> execute -> verify, the CrewAI critic profile.
+  The images were not built/run on Docker Desktop locally (the VM build is the verification). The student region policy only allows
+  indiasouthcentral, malaysiawest, uaenorth, centralindia, koreacentral; `Standard_B2ms` was out of capacity in centralindia.
+- **Cost control**: VM costs ~$60-70/month running; deallocate (`az vm deallocate`) between uses. End-term is late Nov / early Dec 2026.
+- **Experiment matrix finished**: 8 arms x 6 scenarios (5 faults + healthy control) x 3 repeats = 144 live runs; results and an honest
+  interpretation in `docs/EVALUATION_RESULTS_2026-10-16.md`. Headline: the single-agent baseline scored 87% (cheapest/fastest), the
+  no-critic arm 100%, shipped hub 80%, blackboard 67%, few-shot 40%; differences are mostly within noise (n=18 per arm).
+  Real cost ~ $0.004/run (estimate at peak list price is ~3x higher).
+- Pilot findings fixed on the way: non-blind scenario text in the old benchmark, scorer keyword-order bug, evidence-agent output shapes.
+
+## Platform mode + cloud deployment files (2026-10-16) — implemented + unit-tested; images NOT built or run (Docker engine was off)
+- Full stack in `docker-compose.yml` (production, backend, orchestrator, 7 agent services, dashboard; optional CrewAI critic via
+  `--profile crewai`); Dockerfiles: `agents/` (one image, 7 commands), `orchestrator/`, `crewai_critic/`, `dashboard/` (nginx).
+  `docker compose config` passes (also with the profile). Guide: `deploy/DEPLOY.md` (local compose, single-VM cloud recipe,
+  security checklist). CI gained jobs for the new suites and `compose config`.
+- Code changes that make containers possible, all default-off (local behaviour unchanged): `orchestrator/service.py` (HTTP trigger,
+  one investigation at a time, optional `X-Internal-Token`); backend `demo.py` platform mode when `NEXUS_ORCHESTRATOR_URL` is set
+  (HTTP instead of subprocess, no process start/stop); agent addresses from `NEXUS_AGENT_URL_<NAME>`; `NEXUS_BIND_HOST` /
+  `NEXUS_ADVERTISE_HOST` for services; `NEXUS_MCP_PYTHON` for the MCP stdio server. nginx proxy allows only `GET /orders[/id]` of
+  the shop, adds the approver token server-side, optional basic auth (`DASHBOARD_PASSWORD`).
+- Bug found while auditing the container wiring: the MCP SDK starts the tool server with a minimal environment, so
+  `PRODUCTION_BASE_URL` never reached it (it silently used 127.0.0.1:8001). Now passed explicitly (`mcp_server_env`, tested).
+- NOT done: building/running the images, `docker compose up` health checks, an actual cloud deployment (needs the owner's cloud
+  account and a decision on provider/TLS). Do not claim Docker or cloud works until those are run.
+
+## Blackboard topology (2026-10-15) — implemented + tested (0 tokens, real backend + real A2A, fake reasoning); NOT yet run live
+- `NEXUS_TOPOLOGY=blackboard` (default `hub`). The shared board is the incident record's `blackboard` list
+  (`backend/app/incident_store.py::append_board_entry`, `POST/GET /incidents/{id}/blackboard`, six typed entries, atomic,
+  bounded at 200, each write also emits a `BOARD_ENTRY` event). In this mode the A2A message is only a pointer
+  (`{"nexus_board": {incident_id, role}}`); the AGENT reads the board (`agents/common/board_io.py`), does its work and WRITES its
+  `finding` / `hypotheses` / `critique` back; the controller (`orchestrator/blackboard.py`) posts `description` / `request` /
+  `review_request` and reads the results back. Same return shapes as the hub calls, so the verdict loop, budget, guardrails,
+  recovery, report and trace run unchanged. Usage/monitoring bookkeeping rides in the A2A ack, never on the board.
+- Both frameworks support it (ADK executor and the CrewAI critic). The backend address is NOT taken from the message (no SSRF).
+- Proven by `agents/tests/test_blackboard_flow.py` (real backend process + 3 real A2A servers; inputs rebuilt from the board,
+  outputs authored on the board, hub path still works), `agents/tests/test_board_io.py`, `tests/test_blackboard_api.py`.
+- `run_config.topology` records which topology produced a run. Recovery Agent still uses the hub path (no board role).
+- Not done: live comparison hub vs blackboard (benchmark), dashboard view of the board.
+
+## Tracing + provenance (2026-10-15) — implemented + tested (0 tokens); NOT yet run live
+- `nexus_trace.py` (stdlib only): W3C `traceparent`. `run_investigation` starts one trace per incident (`incident.trace_id`,
+  `root_span_id`); every A2A call carries a `traceparent` header (`agents/common/remote_agent.py`, fresh child span per call);
+  every agent service (ADK `a2a_server.py` and the CrewAI service) runs `TraceContextMiddleware`; `AgentMonitor` stamps the
+  received trace_id on its records. Every orchestrator event payload also carries `trace_id`.
+- Proven over the wire: `agents/tests/test_trace_propagation.py` (ADK service) and `orchestrator/tests/test_crewai_critic_a2a.py`
+  (CrewAI service) assert the agent saw the orchestrator's trace_id with a child parent span.
+- Stored at the end of each investigation: `incident.trace` (span tree: incident -> a2a call -> agent -> model/tool calls;
+  inner starts are reconstructed from durations and flagged `start_estimated`) and `incident.lineage` (conclusion -> evidence
+  with tool/arguments/agent/finding -> critique -> plan -> approval/execution; never invents ids). Not an OTLP export.
+- Not done: dashboard panel for trace/lineage; export to an external collector.
+
+## Security guardrails + prompt variants (2026-10-15) — implemented + tested (0 tokens); NOT yet run live
+- `nexus_guard.py`: `screen_user_text` (abuse, prompt injection, empty/too long), `guard_tool_result` (type check, size bound,
+  redaction of instruction-like text, flags), `redact_text`. `agents/common/guard_callbacks.py` applies them as ADK callbacks
+  (before_model blocks a bad first message; after_tool sanitises results, so stored evidence is the sanitised version) chained
+  after the monitor. CrewAI Critic redacts its input too. Orchestrator rejects bad descriptions: `INPUT_REJECTED`, status
+  ABSTAINED, no agent called. Honest limit: regex heuristics (tested for false positives on normal log lines), not a proof.
+- Red-team tests run on the real ADK runner with a spy model: hostile text in a log line never reaches the model; an injected
+  question never causes a model call (`agents/tests/test_guard_callbacks.py`).
+- `agents/common/prompt_variants.py`: default / react / fewshot / persona_sre / persona_auditor (architecture vs content
+  variance), contract text never edited, no scenario causes named (tested). `run_config` (variant, guardrails, critic framework,
+  triage, llm) is stored on each incident and printed in the report; AGENT_MONITOR carries `prompt_variant`.
+- Tests: root 83, agents fast 63, orchestrator logic 53, crewai_critic 3. Agent services must be restarted to pick up new code.
+
+## CrewAI Critic over A2A (2026-10-15) — implemented + tested; verified live twice
+- `crewai_critic/` (see its CLAUDE.md): the Root-Cause Critic as a CrewAI agent behind an a2a-sdk server, same address and
+  contract as the ADK Critic; select with `NEXUS_CRITIC_FRAMEWORK=crewai` (default ADK). Shared ADK-free
+  `agents/critic/critic_core.py` and `agents/common/json_extract.py` were split out of the ADK modules.
+- Live runs (DeepSeek, db_slowdown, backend + shop + 7 agents started through the real ON switch): both DIAGNOSED, critic
+  `framework=crewai` SUPPORTED, 9 model calls / 16,559 and 17,165 tokens (recovery calls not counted), AGENT_MONITOR events
+  from 5-6 agents, final report stored (now built at diagnosis time too). Approval was not clicked. Cost of both runs ~ $0.01
+  (balance 1.48 -> 1.48, granted 0.94 -> 0.93): real runs are much cheaper than the earlier 80k-token estimate.
+- Tests: root 67 + guardrails 24, agents fast 36, orchestrator/eval 81 (incl. ADK->CrewAI A2A), crewai_critic 3.
+  Not in CI yet (needs `.venv-crewai`).
+
+## CrewAI + A2A spike (2026-10-15) — passed
+- `crewai_critic/SPIKE_RESULT.md`: CrewAI 1.15.28 has no A2A server, so a2a-sdk 0.3.26 serves a real CrewAI agent; the ADK
+  client (a2a-sdk 1.1.4) called it over A2A (stub run 0 tokens, then one real DeepSeek call, <1k tokens). Isolated `.venv-crewai`.
+- Next: build the real CrewAI Critic service (new port, Pydantic output, usage/monitoring), orchestrator switch, tests.
+
+## Pydantic contracts + ADK monitoring callbacks (2026-10-15) — implemented + tested; NOT run against a live LLM
+- `nexus_models.py` (root): Pydantic `Finding/Hypothesis/Critique/RecoveryPlan/IncidentReport`; `build_finding`,
+  `build_hypotheses`, `build_critique`, `build_recovery_plan` now validate their output. `attach_report` stores the final
+  `incident.report` (JSON fields + Markdown) after every investigation (fail-soft).
+- `agents/common/callbacks.py`: `AgentMonitor` wired into `DiagnosticAgent` and `ReasoningAgent` via the real ADK
+  callback hooks; trace travels as `monitoring`, orchestrator pops it into an `AGENT_MONITOR` event (`event_bridge.emit_monitor`).
+- Tests: root 67 (+8 models), agents fast 36 (+4 callbacks, run on the real ADK runner with a scripted fake model,
+  0 tokens), orchestrator deterministic 55 + 3 new, guardrails 24, evaluation 22. The 3 orchestrator tests that fail
+  here (`test_incident_manager` x2, `test_investigation_e2e`) need the live agent services; they were not run.
+- Not verified: a live investigation emitting `monitoring` and `report` (needs agents ON + DeepSeek tokens).
+  Dashboard does not show AGENT_MONITOR or the report yet.
+
 ## Five failures, agent triage, live-section redesign (2026-10-13)
 - **Five injectable failures** in the dashboard (`dashboard/src/lib/scenarios.ts`): slow database, bad release, wrong setting,
   payment service down, out of memory. Each sends only a customer-side symptom to the agents (blind-evaluation rule).
@@ -383,3 +571,9 @@ Dashboard-only change (`dashboard/`, one `.claude/launch.json` addition). No edi
 
 
 _Older history: see `docs/archive/PROJECT_STATE_HISTORY.md`._
+
+## 2026-10-19 - Held-out matrix complete
+- 126/126 valid runs (Gemini `gemini-3.5-flash-lite`, 3 owner keys used in turn, same model). Baseline 94%; multi-agent arms 62-75% (not separable at n=18); hub/no-critic/blackboard/pipeline named a fault on the healthy control in 1 of 2 runs. Details: `docs/EVALUATION_RESULTS_HOLDOUT.md`. Raw results are gitignored under `evaluation/results/`.
+- Web search tool (2026-10-19): `web_search` on the analysis MCP server, opt-in (`NEXUS_ENABLE_WEB_SEARCH=1`), refuses secret/URL/IP/internal-host queries, results capped and flagged untrusted. 11 new tests (`mcp/tests/test_web_search.py`, local fake page). Seen live: a real DuckDuckGo query returned results, and the Logs agent chose to call it during an A2A request.
+- CrewAI -> ADK A2A (2026-10-19): ADK services now serve a card with the 0.3 fields added (`agents/common/legacy_card.py`); a 0.3 client and CrewAI's `execute_a2a_delegation` completed tasks against the live Metrics agent. A full CrewAI Agent with `a2a=A2AClientConfig` failed only because gemini-3.5-flash-lite filled `a2a_ids` with the card name. Reverses the earlier 'cannot' note.
+- Jaeger verified afterwards (see OTLP note above). Still not verified: Azure scripts and Approve on the VM. Full test run 2026-10-19: root 316, evaluation 47, mcp 57, crewai 8 pass; agents (89) and orchestrator (76) pass except tests needing live agents/model quota, which pass when the agents are started (test_a2a 6/6, test_incident_manager 2/2); the live end-to-end test was not rerun (Gemini daily quota used).

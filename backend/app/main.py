@@ -7,6 +7,7 @@ from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict
 
 from . import demo, incident_store
@@ -143,6 +144,61 @@ def get_incident(incident_id: str) -> dict:
     if incident is None:
         raise HTTPException(status_code=404, detail="incident not found")
     return incident
+
+
+class BoardEntryCreate(BaseModel):
+    type: str
+    author: str
+    content: dict[str, Any]
+    trace_id: str | None = None
+
+
+@app.post("/incidents/{incident_id}/blackboard")
+def post_board_entry(incident_id: str, body: BoardEntryCreate) -> dict:
+    """Blackboard write (see incident_store.append_board_entry). Only the six known entry types are accepted
+    and an author is required, so the board stays a typed, attributable record."""
+    if body.type not in incident_store.BOARD_ENTRY_TYPES:
+        raise HTTPException(status_code=422, detail=f"unknown blackboard entry type {body.type!r}")
+    try:
+        entry = incident_store.append_board_entry(incident_id, body.type, body.author, body.content, body.trace_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if entry is None:
+        raise HTTPException(status_code=404, detail="incident not found")
+    incident_store.append_event(
+        incident_id, "BOARD_ENTRY", body.author, None, None,
+        {"entry_id": entry["entry_id"], "type": body.type, "trace_id": body.trace_id},
+    )
+    return entry
+
+
+@app.get("/incidents/{incident_id}/blackboard")
+def read_board(incident_id: str, type: str | None = None) -> dict:
+    entries = incident_store.get_board(incident_id, type)
+    if entries is None:
+        raise HTTPException(status_code=404, detail="incident not found")
+    return {"entries": entries}
+
+
+@app.get("/incidents/{incident_id}/report")
+def get_incident_report(incident_id: str, format: str = "json"):
+    """The final structured report the orchestrator stored on the incident (nexus_models.IncidentReport).
+    `?format=md` returns the Markdown rendering as a download; `?format=json` (default) the structured fields."""
+    if format not in ("json", "md"):
+        raise HTTPException(status_code=422, detail="format must be 'json' or 'md'")
+    incident = incident_store.get_incident(incident_id)
+    if incident is None:
+        raise HTTPException(status_code=404, detail="incident not found")
+    report = incident.get("report")
+    if not report:
+        raise HTTPException(status_code=404, detail="report not ready yet (it is written when the investigation finishes)")
+    if format == "md":
+        return PlainTextResponse(
+            report.get("markdown", ""),
+            media_type="text/markdown; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{incident_id}-report.md"'},
+        )
+    return {k: v for k, v in report.items() if k != "markdown"}
 
 
 @app.post("/incidents/{incident_id}/state")

@@ -1,0 +1,34 @@
+[
+ {
+  "truth": "db_slowdown",
+  "statement": "A per-query database latency regression (~260 ms floor) beginning around 2026-10-15T18:25:27Z is the root cause of the order-endpoint slowness: every orders request routes through the DB, which now spends ~260 ms per query regardless of data volume, explaining the step change from sub-millisecond to ~260 ms order responses while non-DB endpoints (/metrics, /db/diagnostics) stay fast."
+ },
+ {
+  "truth": "db_slowdown",
+  "statement": "A fixed per-query database overhead (~260 ms) was introduced on the order-serving path starting around 2026-10-15T18:26:09Z, causing all /orders and /orders/1 requests to jump from ~0.6-1.2 ms to a steady ~258-266 ms even though the orders table has only 10 rows."
+ },
+ {
+  "truth": "config_error",
+  "statement": "The order endpoints (/orders and /orders/1) are failing with HTTP 500 because the application's configuration has DB_POOL_SIZE set to 0, causing a ConfigError (\"DB_POOL_SIZE must be > 0, got 0\") to be thrown fast at request-handling/config-validation time rather than a DB connectivity or latency problem."
+ },
+ {
+  "truth": "config_error",
+  "statement": "A misconfiguration of DB_POOL_SIZE (set to 0) causes order endpoints (/orders and /orders/1) to fail fast with HTTP 500 at configuration validation before any database work, producing ~70% error rates."
+ },
+ {
+  "truth": "config_error",
+  "statement": "The 500 errors on /orders and /orders/1 are caused by an application configuration fault: DB_POOL_SIZE is read as 0, so requests are rejected during config/startup validation before any DB access. This produces fast (sub-1.2ms) ConfigError failures rather than timeouts, yielding ~71% error rate across both endpoints."
+ },
+ {
+  "truth": "unknown",
+  "statement": "The failures are isolated to the order-serving path and occur without latency or timeout involvement: both order endpoints error ~71-72% with sub-millisecond latency, while GET /logs is healthy, ruling out load, saturation, or downstream DB slowness as the cause."
+ },
+ {
+  "truth": "healthy",
+  "statement": "The order page and underlying database are operating normally with optimal performance, zero errors, and low latencies (~1ms)."
+ },
+ {
+  "truth": "healthy",
+  "statement": "The order service and database are operating entirely normally with no errors or performance degradation, as evidenced by consistent sub-millisecond latencies, zero error logs, and rapid database query execution."
+ }
+]

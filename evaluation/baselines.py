@@ -118,4 +118,13 @@ def single_agent_baseline(incident_description: str) -> dict:
     )
     latency = time.perf_counter() - start
     text = response.choices[0].message.content or ""
-    return build_result(_extract_json(text), latency)
+    result = build_result(_extract_json(text), latency)
+    usage = getattr(response, "usage", None)
+    if usage is not None:  # measured by the provider, never estimated
+        result["usage"] = {
+            "llm_calls": 1,
+            "prompt_tokens": int(getattr(usage, "prompt_tokens", 0) or 0),
+            "completion_tokens": int(getattr(usage, "completion_tokens", 0) or 0),
+            "total_tokens": int(getattr(usage, "total_tokens", 0) or 0),
+        }
+    return result

@@ -33,6 +33,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "common"))
 
 from reasoning_agent import ReasoningAgent  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from nexus_models import RecoveryPlan, validated  # noqa: E402
+
 AGENT_NAME = "recovery_agent"
 
 # Kept in sync with guardrails/config.py's ALLOWED_ACTIONS by convention, not
@@ -137,7 +140,7 @@ def build_recovery_plan(hypothesis: dict, critique: dict, raw_model_output, max_
     blast_radius = raw_model_output.get("blast_radius")
     rollback_plan = raw_model_output.get("rollback_plan")
 
-    return {
+    plan = {
         "plan_id": f"RP-{uuid.uuid4().hex[:8]}",
         "hypothesis_id": hypothesis.get("hypothesis_id"),
         "actions": actions,
@@ -148,6 +151,7 @@ def build_recovery_plan(hypothesis: dict, critique: dict, raw_model_output, max_
         "dropped_invalid_actions": dropped,
         "created_at": _now_iso(),
     }
+    return validated(RecoveryPlan, plan)
 
 
 class RecoveryAgent:
@@ -181,7 +185,7 @@ class RecoveryAgent:
 
         raw = await self._reasoner.investigate(question)
         plan = build_recovery_plan(hypothesis, critique, raw.get("parsed"))
-        return {"recovery_plan": plan, "usage": raw.get("usage")}
+        return {"recovery_plan": plan, "usage": raw.get("usage"), "monitoring": raw.get("monitoring")}
 
 
 recovery_agent = RecoveryAgent()

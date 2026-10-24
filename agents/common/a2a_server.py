@@ -25,6 +25,15 @@ from a2a.types.a2a_pb2 import Part, Task, TaskState, TaskStatus
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from starlette.applications import Starlette
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from nexus_trace import TraceContextMiddleware  # noqa: E402
+from board_io import parse_board_message, run_on_board  # noqa: E402
+from legacy_card import LegacyCardMiddleware  # noqa: E402
+
 
 class DiagnosticAgentExecutor(AgentExecutor):
     def __init__(self, diagnostic_agent):
@@ -43,8 +52,14 @@ class DiagnosticAgentExecutor(AgentExecutor):
         updater = TaskUpdater(event_queue, context.task_id, context.context_id)
         await updater.start_work()
 
-        question = context.get_user_input() or self.diagnostic_agent.default_question
-        finding = await self.diagnostic_agent.investigate(question)
+        text = context.get_user_input() or ""
+        board = parse_board_message(text)
+        if board:
+            # Blackboard topology: read the shared board, write the result back, reply with a small ack.
+            finding = await run_on_board(self.diagnostic_agent.investigate, board, self.diagnostic_agent.agent_name)
+        else:
+            question = text or self.diagnostic_agent.default_question
+            finding = await self.diagnostic_agent.investigate(question)
 
         message = updater.new_agent_message([Part(text=json.dumps(finding))])
         await updater.complete(message)
@@ -56,9 +71,14 @@ class DiagnosticAgentExecutor(AgentExecutor):
 
 def build_a2a_app(diagnostic_agent, host: str, port: int) -> Starlette:
     adk_agent = diagnostic_agent.build_adk_agent()
-    return to_a2a(
+    import os
+
+    app = to_a2a(
         adk_agent,
-        host=host,
+        host=os.environ.get("NEXUS_ADVERTISE_HOST", host),
         port=port,
         agent_executor_factory=lambda runner: DiagnosticAgentExecutor(diagnostic_agent),
     )
+    app.add_middleware(LegacyCardMiddleware)  # a card that an A2A 0.3 client (CrewAI) can also read
+    app.add_middleware(TraceContextMiddleware)  # reads the orchestrator's W3C traceparent header
+    return app

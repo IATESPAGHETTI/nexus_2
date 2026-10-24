@@ -452,3 +452,13 @@ POST /demo/investigate    {fault_type, description}; the description is the symp
 ```
 The Incident Manager's triage reads that symptom text to choose which diagnostic agents to call (see
 `orchestrator/triage.py`), so different failures wake different agents.
+
+## Pydantic contracts and final report — implemented (2026-10-15)
+
+`nexus_models.py` (repo root) defines `Finding`, `Hypothesis`, `Critique`, `RecoveryPlan` (extra fields allowed)
+and `IncidentReport`. The agent builders validate against them (a broken object raises `ValidationError` in the
+agent instead of travelling over A2A). At the end of every investigation `orchestrator/investigation.py::attach_report`
+stores `incident.report` = `IncidentReport` fields + `markdown` (a Markdown rendering). Fail-soft: a reporting
+error never changes the outcome. Fields: incident_id, description, outcome, reason, root_cause,
+root_cause_confidence, supporting_evidence[{evidence_id, tool, agent}], critic_verdict, critic_rationale,
+rejected_hypotheses, recovery_actions, approval, loops_used, total_tokens, llm_calls.

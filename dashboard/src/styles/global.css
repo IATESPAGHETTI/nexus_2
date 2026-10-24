@@ -114,3 +114,44 @@ button:focus-visible {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.26);
 }
+
+
+/* Light theme for the incident ("Mission Control" detail) view, so it matches the rest of the site.
+   It re-skins every shared dark token to its light twin (same approach the live section already uses). */
+.nx-light {
+  background: #f7f7f7;
+  color: #111111;
+  --nx-surface-0: #f7f7f7;
+  --nx-ink-1: #111111;
+  --nx-ink-2: #444444;
+  --nx-ink-3: #6b6b6b;
+  --nx-ink-4: #8d8d8d;
+  --nx-brand-on-dark: #d9392a;
+  --nx-surface-1: #ffffff;
+  --nx-surface-2: #ffffff;
+  --nx-surface-3: #f1f1f1;
+  --nx-surface-glass-strong: rgba(255, 255, 255, 0.92);
+  --nx-surface-glass-light: rgba(255, 255, 255, 0.85);
+  --nx-border-hairline: rgba(17, 17, 17, 0.1);
+  --nx-border-hairline-strong: rgba(17, 17, 17, 0.2);
+  --nx-neutral-bg: rgba(17, 17, 17, 0.05);
+  --nx-green: #1f9d57;
+  --nx-green-bg: rgba(31, 157, 87, 0.1);
+  --nx-green-border: rgba(31, 157, 87, 0.32);
+  --nx-amber: #b9731a;
+  --nx-amber-bg: rgba(217, 140, 30, 0.12);
+  --nx-amber-border: rgba(217, 140, 30, 0.38);
+  --nx-red: #d4363b;
+  --nx-red-bg: rgba(212, 54, 59, 0.09);
+  --nx-red-border: rgba(212, 54, 59, 0.35);
+  --nx-indigo: #d9392a;
+  --nx-indigo-bg: rgba(243, 78, 63, 0.09);
+  --nx-indigo-border: rgba(243, 78, 63, 0.35);
+}
+body.nx-body-light {
+  background: #f7f7f7;
+}
+body.nx-body-light::before,
+body.nx-body-light::after {
+  display: none;
+}

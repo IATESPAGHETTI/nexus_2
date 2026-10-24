@@ -46,7 +46,11 @@ def inject(scenario_id: str) -> dict:
     from scenarios import get_scenario  # local import: keeps this module import-order-safe
 
     scenario = get_scenario(scenario_id)
-    return _post("/admin/fault/inject", json={"fault_type": scenario["fault_type"]})
+    faults = scenario.get("fault_types") or [scenario["fault_type"]]       # held-out scenarios may inject several faults
+    result: dict = {}
+    for fault in faults:
+        result = _post("/admin/fault/inject", json={"fault_type": fault})
+    return result
 
 
 def clear() -> dict:

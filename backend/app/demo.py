@@ -79,10 +79,28 @@ def check_production() -> bool:
         return False
 
 
-def _agent_up(port: int) -> bool:
+# Platform mode: when the orchestrator runs as its own service (containers / cloud), NEXUS_ORCHESTRATOR_URL is set,
+# agents are addressed by NEXUS_AGENT_URL_<NAME>, and nothing here starts or stops processes.
+ORCHESTRATOR_URL = os.environ.get("NEXUS_ORCHESTRATOR_URL", "").rstrip("/")
+INTERNAL_TOKEN = os.environ.get("NEXUS_INTERNAL_TOKEN", "")
+
+
+def _agent_url(name: str) -> str:
+    return os.environ.get(f"NEXUS_AGENT_URL_{name.upper()}", f"http://127.0.0.1:{AGENT_PORTS[name]}").rstrip("/")
+
+
+def _agent_up(name: str) -> bool:
     try:
-        r = httpx.get(f"http://127.0.0.1:{port}/.well-known/agent-card.json", timeout=_TIMEOUT)
+        r = httpx.get(f"{_agent_url(name)}/.well-known/agent-card.json", timeout=_TIMEOUT)
         return r.status_code == 200
+    except httpx.RequestError:
+        return False
+
+
+def _orchestrator_post(path: str, body: dict) -> bool:
+    headers = {"X-Internal-Token": INTERNAL_TOKEN} if INTERNAL_TOKEN else {}
+    try:
+        return httpx.post(f"{ORCHESTRATOR_URL}{path}", json=body, headers=headers, timeout=_TIMEOUT).status_code == 202
     except httpx.RequestError:
         return False
 
@@ -90,7 +108,7 @@ def _agent_up(port: int) -> bool:
 def check_agents() -> dict[str, bool]:
     # Probed in parallel: sequential probes took ~3s per down agent (~14s total).
     with ThreadPoolExecutor(max_workers=len(AGENT_PORTS)) as pool:
-        results = list(pool.map(_agent_up, AGENT_PORTS.values()))
+        results = list(pool.map(_agent_up, AGENT_PORTS))
     return dict(zip(AGENT_PORTS, results))
 
 
@@ -139,6 +157,8 @@ def spawn_investigation(incident_id: str, description: str) -> bool:
     A2A calls it will make. Returns False (does not spawn) if the
     orchestrator venv/script isn't present, so a broken dev setup fails
     loudly in the response rather than as a silent background crash."""
+    if ORCHESTRATOR_URL:
+        return _orchestrator_post("/investigate", {"incident_id": incident_id, "description": description})
     if not ORCHESTRATOR_PYTHON.exists() or not RUN_DEMO_SCRIPT.exists():
         return False
     DEMO_LOG_DIR.mkdir(exist_ok=True)
@@ -166,6 +186,21 @@ AGENT_SCRIPTS: dict[str, str] = {
     "recovery_agent": "agents/recovery/a2a_service.py",
 }
 AGENTS_PYTHON = REPO_ROOT / ".venv-agents" / "Scripts" / "python.exe"
+CREWAI_PYTHON = REPO_ROOT / ".venv-crewai" / "Scripts" / "python.exe"
+# Agents that have a CrewAI implementation: name -> (owner env var, script). Only the OWNER's environment can switch an
+# agent to CrewAI (never request input); it is then served from the CrewAI venv at the same A2A address.
+CREWAI_AGENTS = {
+    "root_cause_critic": ("NEXUS_CRITIC_FRAMEWORK", "crewai_critic/a2a_service.py"),
+    "evidence_agent": ("NEXUS_EVIDENCE_FRAMEWORK", "crewai_critic/evidence_service.py"),
+}
+
+
+def _launch_spec(name: str, script: str) -> tuple[Path, str]:
+    """Which interpreter + script starts this agent."""
+    choice = CREWAI_AGENTS.get(name)
+    if choice and os.environ.get(choice[0], "adk").lower() == "crewai":
+        return CREWAI_PYTHON, choice[1]
+    return AGENTS_PYTHON, script
 _BOOT_GRACE_SECONDS = 60.0
 _spawned_at: dict[str, float] = {}
 _spawned_procs: dict[str, subprocess.Popen] = {}
@@ -176,6 +211,10 @@ def start_agents() -> dict:
     ON switch). Idempotent: reachable agents are left alone, and one spawned in
     the last minute is not spawned twice while it is still booting. Starting an
     idle agent makes no model calls; cost only happens during an investigation."""
+    if ORCHESTRATOR_URL:  # platform mode: the services run continuously; nothing to launch
+        up = check_agents()
+        return {"started": [], "already_running": [n for n, ok in up.items() if ok], "failed": [n for n, ok in up.items() if not ok],
+                "note": "Agents are managed by the platform (always on); this switch only reports their status."}
     if not AGENTS_PYTHON.exists():
         return {"started": [], "already_running": [], "failed": list(AGENT_SCRIPTS),
                 "note": f"agents interpreter not found at {AGENTS_PYTHON} (create .venv-agents first)"}
@@ -191,10 +230,14 @@ def start_agents() -> dict:
         if not died and time.monotonic() - _spawned_at.get(name, -1e9) < _BOOT_GRACE_SECONDS:
             started.append(name)  # launched moments ago, still booting
             continue
+        python, script = _launch_spec(name, script)
+        if not python.exists():
+            failed.append(name)
+            continue
         try:
             with open(DEMO_LOG_DIR / f"agent-{name}.log", "w", encoding="utf-8") as log_file:
                 proc = subprocess.Popen(
-                    [str(AGENTS_PYTHON), str(REPO_ROOT / script)],
+                    [str(python), str(REPO_ROOT / script)],
                     cwd=str(REPO_ROOT),
                     stdout=log_file,
                     stderr=subprocess.STDOUT,
@@ -221,6 +264,9 @@ def _kill_tree(proc: subprocess.Popen) -> None:
 def stop_agents() -> dict:
     """The dashboard's agent OFF switch: stops only the agent services THIS backend
     started. Agents someone started by hand are left alone and reported."""
+    if ORCHESTRATOR_URL:
+        return {'stopped': [], 'still_running': [n for n, ok in check_agents().items() if ok],
+                'note': 'Agents are managed by the platform and keep running.'}
     stopped = []
     for name, proc in list(_spawned_procs.items()):
         if proc.poll() is None:
@@ -237,6 +283,8 @@ def stop_agents() -> dict:
 
 
 def can_resume_recovery() -> bool:
+    if ORCHESTRATOR_URL:
+        return True
     return ORCHESTRATOR_PYTHON.exists() and RUN_DEMO_SCRIPT.exists()
 
 
@@ -245,6 +293,8 @@ def spawn_resume_recovery(incident_id: str) -> bool:
     process (the original one exited when the approval window closed)."""
     if not can_resume_recovery():
         return False
+    if ORCHESTRATOR_URL:
+        return _orchestrator_post("/resume-recovery", {"incident_id": incident_id})
     DEMO_LOG_DIR.mkdir(exist_ok=True)
     with open(DEMO_LOG_DIR / f"{incident_id}-resume.log", "w", encoding="utf-8") as log_file:
         subprocess.Popen(

@@ -1,0 +1,46 @@
+# NEXUS as ONE container for free hosts that allow a single container (Hugging Face Spaces, "Docker" SDK).
+# Everything runs inside it under supervisord and talks over localhost, exactly like the local non-Docker setup:
+#   nginx :7860 (public) -> dashboard + /api -> backend :8000 ; /production/orders -> shop :8001
+#   backend :8000, shop :8001, orchestrator :8200, 7 agent services :8101-8107
+# Build (repo root):  docker build -f Dockerfile.space -t nexus-space .
+FROM node:20-alpine AS web
+WORKDIR /web
+COPY dashboard/package.json dashboard/package-lock.json ./
+RUN npm ci
+COPY dashboard ./
+RUN npm run build
+
+FROM python:3.11-slim
+ENV PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 PIP_NO_CACHE_DIR=1
+RUN apt-get update && apt-get install -y --no-install-recommends nginx supervisor openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Two environments, as locally: the shop+backend pins an older FastAPI that the agent stack would break.
+RUN python -m venv /opt/venv-agents && python -m venv /opt/venv-backend
+COPY agents/requirements.txt /tmp/agents-requirements.txt
+COPY orchestrator/requirements.txt /tmp/orchestrator-requirements.txt
+COPY backend/requirements.txt /tmp/backend-requirements.txt
+RUN /opt/venv-agents/bin/pip install -r /tmp/agents-requirements.txt -r /tmp/orchestrator-requirements.txt \
+    && /opt/venv-backend/bin/pip install -r /tmp/backend-requirements.txt
+
+# Spaces run the container as a non-root user (uid 1000).
+RUN useradd -m -u 1000 user
+WORKDIR /app
+COPY --chown=user runtime_config.py nexus_models.py nexus_guard.py nexus_trace.py ./
+COPY --chown=user agents ./agents
+COPY --chown=user mcp ./mcp
+COPY --chown=user orchestrator ./orchestrator
+COPY --chown=user guardrails ./guardrails
+COPY --chown=user backend ./backend
+COPY --chown=user production ./production
+COPY --chown=user --from=web /web/dist /app/web
+COPY --chown=user deploy/space /app/deploy/space
+RUN sed -i 's/\r$//' /app/deploy/space/entrypoint.sh /app/deploy/space/nginx.conf /app/deploy/space/supervisord.conf && chmod +x /app/deploy/space/entrypoint.sh && mkdir -p /app/run && chown -R user /app/run
+
+USER user
+ENV NEXUS_MCP_PYTHON=/opt/venv-agents/bin/python \
+    NEXUS_ORCHESTRATOR_URL=http://127.0.0.1:8200 \
+    NEXUS_DB_PATH=/tmp/nexus.db \
+    PORT=7860
+EXPOSE 7860
+CMD ["/app/deploy/space/entrypoint.sh"]

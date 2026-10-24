@@ -1,0 +1,5 @@
+# Shell scripts and container configs must keep LF line endings or they break inside Linux images.
+*.sh text eol=lf
+deploy/** text eol=lf
+Dockerfile* text eol=lf
+**/Dockerfile text eol=lf

@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AgentMasterToggle } from "../common/AgentMasterToggle";
 import { useAgentControl } from "../../context/AgentControlContext";
@@ -42,12 +42,18 @@ export function AppShell({ children }: PropsWithChildren) {
   const { pathname, hash } = useLocation();
   const marketing = pathname === "/" || pathname === "/presentation";
   const isIncidentView = pathname.startsWith("/incidents/");
+  const lightPage = marketing || isIncidentView;   // every page is light now; the incident view reuses the light tokens
+
+  useEffect(() => {
+    document.body.classList.toggle("nx-body-light", lightPage);
+    return () => document.body.classList.remove("nx-body-light");
+  }, [lightPage]);
 
   const item = (active: boolean) => `${styles.navItem} ${active ? styles.navItemActive : ""}`;
 
   return (
-    <div className={styles.shell}>
-      <header className={`${styles.topNav} ${marketing ? styles.light : styles.dark}`}>
+    <div className={`${styles.shell} ${lightPage ? "nx-light" : ""}`}>
+      <header className={`${styles.topNav} ${lightPage ? styles.light : styles.dark}`}>
         <StatusStrip />
         <div className={styles.navMain}>
           <div className={styles.navContainer}>
@@ -58,7 +64,7 @@ export function AppShell({ children }: PropsWithChildren) {
 
             <nav className={styles.navLinks}>
               <Link to="/" className={item(pathname === "/" && !hash)}>
-                Overview
+                Mission Control
               </Link>
               <Link to="/#recent-incidents" className={item(pathname === "/" && hash === "#recent-incidents")}>
                 Incidents

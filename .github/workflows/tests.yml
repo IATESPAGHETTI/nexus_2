@@ -32,6 +32,8 @@ jobs:
           orchestrator/tests/test_investigation_logic.py
           orchestrator/tests/test_recovery_logic.py
           orchestrator/tests/test_verification.py
+          orchestrator/tests/test_report_and_monitor.py
+          orchestrator/tests/test_service.py
           guardrails/tests
           evaluation/tests
           fault_injection/tests/test_scenarios.py
@@ -51,7 +53,29 @@ jobs:
           agents/tests/test_finding.py
           agents/tests/test_evidence_critic.py
           agents/tests/test_recovery.py
+          agents/tests/test_callbacks.py
+          agents/tests/test_guard_callbacks.py
+          agents/tests/test_prompt_variants.py
+          agents/tests/test_board_io.py
+          agents/tests/test_trace_propagation.py
           -q
+
+  crewai-critic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r crewai_critic/requirements.txt pytest
+      - run: python -m pytest crewai_critic/tests -q -p no:cacheprovider
+
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config -q
+      - run: docker compose --profile crewai config -q
 
   dashboard:
     runs-on: ubuntu-latest

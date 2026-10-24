@@ -127,6 +127,45 @@ def update_incident(incident_id: str, fields: dict) -> dict | None:
         return incident
 
 
+BOARD_ENTRY_TYPES = ("description", "request", "finding", "hypotheses", "review_request", "critique")
+MAX_BOARD_ENTRIES = 200
+
+
+def append_board_entry(incident_id: str, entry_type: str, author: str, content: dict, trace_id: str | None = None) -> dict | None:
+    """Shared blackboard (course requirement 1): an append-only list on the incident, written by the
+    controller AND by the agents themselves. Atomic under the store lock; ids are bb-1, bb-2, ..."""
+    with _lock:
+        conn = _connection()
+        incident = _load(conn, incident_id)
+        if incident is None:
+            return None
+        board = incident.setdefault("blackboard", [])
+        if len(board) >= MAX_BOARD_ENTRIES:
+            raise ValueError("blackboard is full")
+        entry = {
+            "entry_id": f"bb-{len(board) + 1}",
+            "type": entry_type,
+            "author": author,
+            "timestamp": _now(),
+            "trace_id": trace_id,
+            "content": content,
+        }
+        board.append(entry)
+        incident["updated_at"] = _now()
+        _save(conn, incident)
+        conn.commit()
+        return entry
+
+
+def get_board(incident_id: str, entry_type: str | None = None) -> list[dict] | None:
+    with _lock:
+        incident = _load(_connection(), incident_id)
+        if incident is None:
+            return None
+        board = incident.get("blackboard", [])
+        return [e for e in board if entry_type is None or e["type"] == entry_type]
+
+
 def append_event(
     incident_id: str,
     event_type: str,

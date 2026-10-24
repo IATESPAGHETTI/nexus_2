@@ -24,3 +24,6 @@ reference_web/
 dashboard/_backup_ui_v1/
 reference_web.zip
 .claude/settings.local.json
+evaluation/results/
+
+*.db

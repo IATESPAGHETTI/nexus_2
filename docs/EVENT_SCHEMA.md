@@ -87,7 +87,7 @@ actually emitted: `INCIDENT_CREATED`, `AGENTS_SELECTED`, `AGENT_STARTED`, `A2A_M
 `INCIDENT_STATUS_CHANGED`, `RECOVERY_PROPOSED`, `SAFETY_VALIDATION`,
 `HUMAN_APPROVAL_REQUESTED`, `HUMAN_APPROVAL_GRANTED`,
 `HUMAN_APPROVAL_REJECTED`, `RECOVERY_EXECUTED`, `RECOVERY_VERIFIED`,
-`INCIDENT_RESOLVED`. `MCP_TOOL_CALL`/`MCP_TOOL_RESULT` are sourced from the
+`INCIDENT_RESOLVED`, `INPUT_REJECTED` (input guardrail blocked the incident description; no agent is called), `AGENT_MONITOR` (2026-10-15: one per agent task; payload = the ADK callback trace from `agents/common/callbacks.py`: model calls, tool calls, durations, errors; keys and sizes only). `MCP_TOOL_CALL`/`MCP_TOOL_RESULT` are sourced from the
 real evidence already present in each diagnostic agent's Finding, not a
 direct read of `mcp/audit.py`'s in-process deque — see
 `orchestrator/event_bridge.py`'s module docstring for why, and

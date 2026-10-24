@@ -1,0 +1,26 @@
+# Manual deploy to the Azure VM over SSH (optional; `deploy/azure/redeploy.sh` does the same from your own computer with `az`).
+# One-time setup in GitHub -> Settings -> Secrets and variables -> Actions: VM_HOST (the DNS name or IP), VM_SSH_KEY (a PRIVATE key whose public half is
+# in ~azureuser/.ssh/authorized_keys on the VM). The VM must be running. Not run yet; first use may need small fixes.
+name: deploy
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "branch to deploy"
+        default: "main"
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: write the SSH key
+        env:
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+      - name: pull and rebuild on the VM
+        run: |
+          ssh -i ~/.ssh/id_deploy azureuser@"${{ secrets.VM_HOST }}" \
+            "set -e; cd nexus && git fetch origin && git checkout '${{ inputs.ref }}' && git pull --ff-only origin '${{ inputs.ref }}' && \
+             docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --build && sh deploy/azure/healthcheck.sh"

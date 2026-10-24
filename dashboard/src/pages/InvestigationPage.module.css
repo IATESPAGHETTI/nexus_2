@@ -21,7 +21,7 @@
 .dividerLine {
   flex: 1;
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--nx-border-hairline);
 }
 
 .dividerText {
@@ -139,8 +139,8 @@
 
 .noticeBody code {
   font-family: var(--nx-font-mono);
-  color: #b8c2ff;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--nx-ink-2);
+  background: var(--nx-neutral-bg);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -151,12 +151,12 @@
   color: var(--nx-ink-1);
   text-decoration: none;
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--nx-neutral-bg);
+  border: 1px solid var(--nx-border-hairline-strong);
   border-radius: var(--nx-radius-full);
   transition: all var(--nx-duration-fast) var(--nx-ease-standard);
 }
 
 .backBtn:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--nx-border-hairline);
 }

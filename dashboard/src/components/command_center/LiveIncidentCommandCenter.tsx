@@ -214,7 +214,7 @@ export function LiveIncidentCommandCenter() {
                   </button>
                 )}
                 <a
-                  href="http://localhost:8001/shop"
+                  href={import.meta.env.PROD ? "/shop/" : "http://localhost:8001/shop"}
                   target="_blank"
                   rel="noreferrer"
                   className={styles.shopLink}

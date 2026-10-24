@@ -1,0 +1,61 @@
+# Rendered at start-up by the nginx image (envsubst only replaces ${VARIABLES} defined in the environment).
+# Upstreams are resolved at request time through Docker's DNS, so nginx starts even if backend/production are still booting.
+server {
+  listen 80;
+  server_name _;
+  resolver 127.0.0.11 valid=10s ipv6=off;
+  include /etc/nginx/auth.conf;
+
+  root /usr/share/nginx/html;
+  index index.html;
+
+  set $backend_upstream http://backend:8000;
+  set $production_upstream http://production:8001;
+
+  # single-page app
+  location / {
+    try_files $uri /index.html;
+  }
+
+  # backend API. The approver token is attached HERE, server-side; it is never shipped to the browser.
+  location /api/ {
+    rewrite ^/api/(.*)$ /$1 break;
+    proxy_pass $backend_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Approver-Token "${NEXUS_APPROVER_TOKEN}";
+    proxy_read_timeout 120s;
+  }
+
+  # customer traffic to the simulated shop: GET /orders and /orders/<id> only; /admin and everything else are refused
+  location ~ ^/production/(orders(/[0-9]+)?)$ {
+    limit_except GET { deny all; }
+    rewrite ^/production/(.*)$ /$1 break;
+    proxy_pass $production_upstream;
+    proxy_set_header Host $host;
+  }
+  # --- the simulated shop, served on the dashboard's own address (same login) ---
+  location = /shop { return 301 /shop/; }
+  location = /shop/ {
+    rewrite ^ /shop break;
+    proxy_pass $production_upstream;
+    proxy_set_header Accept-Encoding "";
+    sub_filter '</head>' '<script>window.NEXUS_API_BASE="/shop-api";</script></head>';
+    sub_filter_once on;
+  }
+  # the shop's own API, narrowed to what a shopper needs: list/create orders, read one order, list products
+  location = /shop-api/orders {
+    limit_except GET POST { deny all; }
+    rewrite ^/shop-api/(.*)$ /$1 break;
+    proxy_pass $production_upstream;
+  }
+  location ~ ^/shop-api/(orders/[0-9]+|products)$ {
+    limit_except GET { deny all; }
+    rewrite ^/shop-api/(.*)$ /$1 break;
+    proxy_pass $production_upstream;
+  }
+  location /shop-api/ { return 403; }
+
+  location /production/ {
+    return 403;
+  }
+}

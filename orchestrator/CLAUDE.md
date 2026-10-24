@@ -205,6 +205,11 @@ under 2 seconds.
 ## Usually don't touch
 `backend/`, `production/`, `mcp/` (separate verified components, separate venv)
 
+## Blackboard topology (2026-10-15)
+- `blackboard.py`: with `NEXUS_TOPOLOGY=blackboard`, `investigation.py` swaps three call sites (specialist dispatch, evidence
+  synthesis, critic review) for board versions with identical return shapes. Details: `docs/PROJECT_STATE.md`.
+- Also new: `INPUT_REJECTED` gate, `run_config`, `trace_id` (nexus_trace.py), `attach_report` (report + trace + lineage).
+
 ## Triage (2026-10-13)
 - `triage.py`: `select_agents(text, available, first_round=True)` picks which diagnostic agents to call from keyword
   rules over the symptom text (never the injected fault). Metrics is always first and at least 2 agents are used on

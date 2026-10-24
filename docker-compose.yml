@@ -1,27 +1,188 @@
+# NEXUS full stack: simulated shop + backend + orchestrator + 7 independent A2A agent services + dashboard.
+#
+#   cp .env.example .env        # put DEEPSEEK_API_KEY (and the tokens below) in .env  -- never commit it
+#   docker compose up --build   # dashboard on http://localhost:8080
+#   docker compose --profile crewai up --build   # also start the CrewAI critic (set CRITIC_URL, see below)
+#
+# Only the dashboard is published to the network. Every other service is reachable only on the compose network
+# (backend and production are bound to 127.0.0.1 for local debugging).
+#
+# Settings read from .env / the shell:
+#   DEEPSEEK_API_KEY       required for real investigations (agents and orchestrator)
+#   DASHBOARD_USER/PASSWORD  basic auth for the dashboard; leave PASSWORD empty ONLY for local use
+#   NEXUS_APPROVER_TOKEN   nginx adds it to approval calls; the backend refuses approvals without it
+#   NEXUS_INTERNAL_TOKEN   shared secret between backend and orchestrator
+#   NEXUS_PROMPT_VARIANT / NEXUS_TOPOLOGY / NEXUS_GUARDRAILS   experiment switches (see docs/PROJECT_STATE.md)
+#   CRITIC_URL             http://critic:8106 (ADK, default) or http://crewai-critic:8106 (needs --profile crewai)
+#   EVIDENCE_URL           http://evidence:8105 (ADK, default) or http://crewai-evidence:8105 (needs --profile crewai)
+
+x-llm-env: &llm-env
+  DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+  NEXUS_LLM_PROVIDER: ${NEXUS_LLM_PROVIDER:-deepseek}
+  NEXUS_LLM_MODEL: ${NEXUS_LLM_MODEL:-}
+
+x-agent-urls: &agent-urls
+  NEXUS_AGENT_URL_METRICS_AGENT: http://metrics:8101
+  NEXUS_AGENT_URL_LOGS_TRACES_AGENT: http://logs-traces:8102
+  NEXUS_AGENT_URL_CHANGE_ANALYSIS_AGENT: http://change-analysis:8103
+  NEXUS_AGENT_URL_DATABASE_AGENT: http://database-agent:8104
+  NEXUS_AGENT_URL_EVIDENCE_AGENT: ${EVIDENCE_URL:-http://evidence:8105}
+  NEXUS_AGENT_URL_ROOT_CAUSE_CRITIC: ${CRITIC_URL:-http://critic:8106}
+  NEXUS_AGENT_URL_RECOVERY_AGENT: http://recovery:8107
+
+x-agent: &agent
+  build:
+    context: .
+    dockerfile: agents/Dockerfile
+  image: nexus-agents
+  restart: unless-stopped
+  depends_on:
+    production:
+      condition: service_healthy
+  environment: &agent-env
+    <<: *llm-env
+    PRODUCTION_BASE_URL: http://production:8001
+    NEXUS_BACKEND_URL: http://backend:8000
+    NEXUS_PROMPT_VARIANT: ${NEXUS_PROMPT_VARIANT:-default}
+    NEXUS_GUARDRAILS: ${NEXUS_GUARDRAILS:-1}
+    NEXUS_ENABLE_ANALYSIS_TOOLS: ${NEXUS_ENABLE_ANALYSIS_TOOLS:-0}
+
 services:
+  production:
+    build: ./production
+    ports: ["127.0.0.1:8001:8001"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   backend:
     build: ./backend
-    ports:
-      - "8000:8000"
+    ports: ["127.0.0.1:8000:8000"]
+    restart: unless-stopped
     environment:
+      <<: *agent-urls
       NEXUS_DB_PATH: /data/nexus.db
+      NEXUS_PRODUCTION_URL: http://production:8001
+      NEXUS_ORCHESTRATOR_URL: http://orchestrator:8200
+      NEXUS_INTERNAL_TOKEN: ${NEXUS_INTERNAL_TOKEN:-}
+      NEXUS_APPROVER_TOKEN: ${NEXUS_APPROVER_TOKEN:-}
     volumes:
       - nexus-data:/data
+    depends_on:
+      production:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       timeout: 3s
       retries: 5
 
-  production:
-    build: ./production
-    ports:
-      - "8001:8001"
+  orchestrator:
+    build:
+      context: .
+      dockerfile: orchestrator/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: [*llm-env, *agent-urls]
+      NEXUS_BACKEND_URL: http://backend:8000
+      PRODUCTION_BASE_URL: http://production:8001
+      NEXUS_INTERNAL_TOKEN: ${NEXUS_INTERNAL_TOKEN:-}
+      NEXUS_TOPOLOGY: ${NEXUS_TOPOLOGY:-hub}
+      NEXUS_ALLOW_INTERNAL_HTTP: "1"   # services reach each other by name on the private compose network (see agents/common/remote_agent.py)
+      NEXUS_PROMPT_VARIANT: ${NEXUS_PROMPT_VARIANT:-default}
+      NEXUS_GUARDRAILS: ${NEXUS_GUARDRAILS:-1}
+      NEXUS_CRITIC_FRAMEWORK: ${NEXUS_CRITIC_FRAMEWORK:-adk}
+      NEXUS_EVIDENCE_FRAMEWORK: ${NEXUS_EVIDENCE_FRAMEWORK:-adk}
+      NEXUS_TRIAGE: ${NEXUS_TRIAGE:-1}
+      MAX_LLM_CALLS_PER_INCIDENT: ${MAX_LLM_CALLS_PER_INCIDENT:-60}
+      MAX_TOTAL_TOKENS_PER_INCIDENT: ${MAX_TOTAL_TOKENS_PER_INCIDENT:-250000}
+    depends_on:
+      backend:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8200/health')"]
       interval: 10s
       timeout: 3s
       retries: 5
+
+  metrics:
+    <<: *agent
+    command: ["python", "agents/metrics/a2a_service.py"]
+    environment: {<<: *agent-env, NEXUS_ADVERTISE_HOST: metrics}
+
+  logs-traces:
+    <<: *agent
+    command: ["python", "agents/logs_traces/a2a_service.py"]
+    environment: {<<: *agent-env, NEXUS_ADVERTISE_HOST: logs-traces}
+
+  change-analysis:
+    <<: *agent
+    command: ["python", "agents/change_analysis/a2a_service.py"]
+    environment: {<<: *agent-env, NEXUS_ADVERTISE_HOST: change-analysis}
+
+  database-agent:
+    <<: *agent
+    command: ["python", "agents/database/a2a_service.py"]
+    environment: {<<: *agent-env, NEXUS_ADVERTISE_HOST: database-agent}
+
+  evidence:
+    <<: *agent
+    command: ["python", "agents/evidence/a2a_service.py"]
+    environment: {<<: *agent-env, NEXUS_ADVERTISE_HOST: evidence}
+
+  critic:
+    <<: *agent
+    command: ["python", "agents/critic/a2a_service.py"]
+    environment: {<<: *agent-env, NEXUS_ADVERTISE_HOST: critic}
+
+  recovery:
+    <<: *agent
+    command: ["python", "agents/recovery/a2a_service.py"]
+    environment: {<<: *agent-env, NEXUS_ADVERTISE_HOST: recovery}
+
+  crewai-critic:
+    profiles: ["crewai"]
+    build:
+      context: .
+      dockerfile: crewai_critic/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *llm-env
+      NEXUS_BACKEND_URL: http://backend:8000
+      NEXUS_ADVERTISE_HOST: crewai-critic
+      NEXUS_PROMPT_VARIANT: ${NEXUS_PROMPT_VARIANT:-default}
+      NEXUS_GUARDRAILS: ${NEXUS_GUARDRAILS:-1}
+
+  crewai-evidence:
+    profiles: ["crewai"]
+    build:
+      context: .
+      dockerfile: crewai_critic/Dockerfile
+    command: ["python", "crewai_critic/evidence_service.py"]
+    restart: unless-stopped
+    environment:
+      <<: *llm-env
+      NEXUS_BACKEND_URL: http://backend:8000
+      NEXUS_ADVERTISE_HOST: crewai-evidence
+      EVIDENCE_PORT: "8105"
+      NEXUS_PROMPT_VARIANT: ${NEXUS_PROMPT_VARIANT:-default}
+      NEXUS_GUARDRAILS: ${NEXUS_GUARDRAILS:-1}
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    ports: ["${DASHBOARD_BIND:-0.0.0.0}:${DASHBOARD_PORT:-8080}:80"]
+    restart: unless-stopped
+    environment:
+      DASHBOARD_USER: ${DASHBOARD_USER:-nexus}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-}
+      NEXUS_APPROVER_TOKEN: ${NEXUS_APPROVER_TOKEN:-}
+    depends_on:
+      - backend
 
 volumes:
   nexus-data:

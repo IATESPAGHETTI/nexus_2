@@ -1,0 +1,17 @@
+.git
+.claude
+.venv
+.venv-*
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+.env
+.env.*
+!.env.example
+*.db
+evaluation/results
+backend/.data
+backend/.demo_logs
+dashboard/dist
+dashboard/_backup_ui_v1
+reference_web

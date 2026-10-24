@@ -7,7 +7,7 @@ import styles from "../components/story/Story.module.css";
 
 const goLive = () => document.getElementById("pl-live")?.scrollIntoView({ behavior: "smooth" });
 
-/** Overview: the same design system as /presentation, minus the long-form story. */
+/** Mission Control (the home page, linked as "Mission Control" in the top navigation): the same design system as /presentation, minus the long-form story. */
 export function MissionControlPage() {
   useHashScroll();
   return (

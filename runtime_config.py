@@ -15,7 +15,7 @@ OFFICIAL_MODEL = "deepseek-chat"
 _DEFAULT_MODELS = {
     "deepseek": OFFICIAL_MODEL,
     "groq": "openai/gpt-oss-120b",
-    "gemini": "gemini-2.5-flash",
+    "gemini": "gemini-3.5-flash-lite",  # gemini-2.5-flash is closed to new accounts (2026-10); see docs/PROJECT_STATE.md
 }
 
 

@@ -150,7 +150,7 @@
   async function timed(path, options) {
     const t0 = performance.now();
     let res = null, data = null;
-    try { res = await fetch(path, { cache: "no-store", ...options }); data = await res.json().catch(() => null); } catch (e) { /* network error */ }
+    try { res = await fetch((window.NEXUS_API_BASE || "") + path, { cache: "no-store", ...options }); data = await res.json().catch(() => null); } catch (e) { /* network error */ }
     const ms = performance.now() - t0, ok = !!(res && res.ok);
     if (path.startsWith("/orders")) { history.push({ ms, ok }); renderMonitor(); }   // product browsing is not the DB-backed path
     return { ok, status: res ? res.status : 0, data, ms };

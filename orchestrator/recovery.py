@@ -88,6 +88,7 @@ async def _call_recovery_agent(incident_id: str, hypothesis: dict, critique: dic
         payload={"task_id": call["task_id"], "context_id": call["context_id"]},
     )
     response = call["response"] if isinstance(call["response"], dict) else {}
+    event_bridge.emit_monitor(incident_id, RECOVERY_AGENT_NAME, response.pop("monitoring", None))
     plan = response.get("recovery_plan")
     if not isinstance(plan, dict):
         plan = {"plan_id": None, "actions": [], "risk_level": None, "rollback_plan": None}
@@ -157,6 +158,7 @@ async def _verify_recovery(incident_id: str) -> dict:
             "Recovery actions were just executed for this incident. Check current error rate and latency.",
         )
         finding = call["response"] if isinstance(call["response"], dict) else {}
+        finding.pop("monitoring", None)  # callback trace is for the event log, not evidence
     except Exception as exc:  # noqa: BLE001 -- supporting evidence only; never gates the result
         finding = {"unavailable": f"{type(exc).__name__}"}
     for item in finding.get("evidence", []) or []:

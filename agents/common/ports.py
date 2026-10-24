@@ -4,7 +4,12 @@ Each of the 4 diagnostic agents runs as its OWN OS process listening on its own
 port — genuinely independently addressable, not shared in-process objects.
 """
 
-A2A_HOST = "127.0.0.1"
+import os
+
+# Where a service LISTENS. Containers set NEXUS_BIND_HOST=0.0.0.0.
+A2A_HOST = os.environ.get("NEXUS_BIND_HOST", "127.0.0.1")
+# The name other services use to reach this one (goes into the Agent Card). Containers set it to the service name.
+ADVERTISE_HOST = os.environ.get("NEXUS_ADVERTISE_HOST", A2A_HOST)
 
 A2A_PORTS = {
     "metrics_agent": 8101,
@@ -22,11 +27,14 @@ A2A_PORTS = {
 }
 
 
-def agent_card_url(agent_name: str) -> str:
-    port = A2A_PORTS[agent_name]
-    return f"http://{A2A_HOST}:{port}/.well-known/agent-card.json"
-
-
 def base_url(agent_name: str) -> str:
-    port = A2A_PORTS[agent_name]
-    return f"http://{A2A_HOST}:{port}"
+    """Address of an agent as seen by its CALLERS. NEXUS_AGENT_URL_<NAME> (e.g. NEXUS_AGENT_URL_METRICS_AGENT=
+    http://metrics:8101) overrides the local default, which is how the orchestrator finds containers."""
+    override = os.environ.get(f"NEXUS_AGENT_URL_{agent_name.upper()}")
+    if override:
+        return override.rstrip("/")
+    return f"http://127.0.0.1:{A2A_PORTS[agent_name]}"
+
+
+def agent_card_url(agent_name: str) -> str:
+    return f"{base_url(agent_name)}/.well-known/agent-card.json"
