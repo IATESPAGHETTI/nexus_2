@@ -145,9 +145,19 @@ def get_incident(incident_id: str) -> dict:
     return incident
 
 
+# Human decisions the generic state merge must never record: only POST .../approve
+# (with its optional X-Approver-Token gate) may write these. The orchestrator itself only
+# ever writes PENDING / EXPIRED / NOT_REQUESTED through /state.
+_HUMAN_ONLY_DECISIONS = ("APPROVED", "REJECTED")
+
+
 @app.post("/incidents/{incident_id}/state")
 def update_incident_state(incident_id: str, body: IncidentStateUpdate) -> dict:
-    incident = incident_store.update_incident(incident_id, body.model_dump(exclude_unset=True))
+    fields = body.model_dump(exclude_unset=True)
+    approval = fields.get("approval_state")
+    if isinstance(approval, dict) and approval.get("decision") in _HUMAN_ONLY_DECISIONS:
+        raise HTTPException(status_code=403, detail="approval decisions must go through POST /incidents/{id}/approve")
+    incident = incident_store.update_incident(incident_id, fields)
     if incident is None:
         raise HTTPException(status_code=404, detail="incident not found")
     return incident

@@ -197,3 +197,21 @@ def test_approval_is_open_when_no_token_is_configured(monkeypatch):
     monkeypatch.delenv("NEXUS_APPROVER_TOKEN", raising=False)
     incident_id = _incident_awaiting_approval()
     assert client.post(f"/incidents/{incident_id}/approve", json={"decision": "REJECTED", "approved_by": "me"}).status_code == 200
+
+
+def test_state_endpoint_cannot_record_a_human_approval(monkeypatch):
+    """The generic state merge must not be a side door around /approve and its token gate."""
+    monkeypatch.setenv("NEXUS_APPROVER_TOKEN", "s3cret")
+    incident_id = _incident_awaiting_approval()
+
+    for decision in ("APPROVED", "REJECTED"):
+        response = client.post(f"/incidents/{incident_id}/state", json={"approval_state": {"decision": decision}})
+        assert response.status_code == 403
+    assert client.get(f"/incidents/{incident_id}").json()["approval_state"]["decision"] == "PENDING"
+
+
+def test_state_endpoint_still_accepts_orchestrator_approval_states():
+    incident_id = client.post("/incidents", json={"description": "orchestrator"}).json()["incident_id"]
+    for decision in ("PENDING", "EXPIRED", "NOT_REQUESTED"):
+        response = client.post(f"/incidents/{incident_id}/state", json={"approval_state": {"decision": decision}})
+        assert response.status_code == 200 and response.json()["approval_state"]["decision"] == decision
